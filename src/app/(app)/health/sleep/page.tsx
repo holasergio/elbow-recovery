@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Moon, Star, Clock } from '@phosphor-icons/react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -23,10 +24,21 @@ function formatDate(dateStr: string): string {
   })
 }
 
+// ─── Quality Labels ─────────────────────────────────────────────
+
+const QUALITY_LABELS: Record<number, string> = {
+  1: 'Плохой',
+  2: 'Ниже среднего',
+  3: 'Средний',
+  4: 'Хороший',
+  5: 'Отличный',
+}
+
 // ─── Page ───────────────────────────────────────────────────────
 
 export default function SleepPage() {
   const today = new Date().toISOString().split('T')[0]
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null)
 
   const todaySleep = useLiveQuery(
     () => db.sleepLogs.where('date').equals(today).first(),
@@ -136,146 +148,202 @@ export default function SleepPage() {
               gap: '8px',
             }}
           >
-            {recentLogs.map((log) => (
-              <div
-                key={log.id}
-                style={{
-                  padding: '16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  animation: 'var(--animate-fade-in)',
-                }}
-              >
-                {/* Top row: date + total hours */}
-                <div
+            {recentLogs.map((log) => {
+              const isExpanded = expandedLogId === log.id
+              return (
+                <button
+                  key={log.id}
+                  type="button"
+                  onClick={() =>
+                    setExpandedLogId(isExpanded ? null : (log.id ?? null))
+                  }
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    animation: 'var(--animate-fade-in)',
+                    cursor: 'pointer',
+                    background: 'var(--color-surface)',
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 600,
-                      color: 'var(--color-text)',
-                    }}
-                  >
-                    {formatDate(log.date)}
-                  </span>
+                  {/* Top row: date + total hours */}
                   <div
                     style={{
-                      display: 'inline-flex',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: `color-mix(in srgb, ${getHoursColor(log.totalHours)} 12%, transparent)`,
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
                     }}
                   >
                     <span
                       style={{
                         fontSize: 'var(--text-sm)',
-                        fontWeight: 700,
-                        color: getHoursColor(log.totalHours),
+                        fontWeight: 600,
+                        color: 'var(--color-text)',
                       }}
                     >
-                      {log.totalHours}ч
+                      {formatDate(log.date)}
                     </span>
-                  </div>
-                </div>
-
-                {/* Time range + quality */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Clock
-                      size={14}
-                      weight="duotone"
-                      style={{ color: 'var(--color-text-muted)' }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      {log.bedTime} → {log.wakeTime}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    {/* Quality Stars */}
                     <div
-                      style={{ display: 'flex', gap: '1px' }}
-                      aria-label={`Качество: ${log.quality} из 5`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        backgroundColor: `color-mix(in srgb, ${getHoursColor(log.totalHours)} 12%, transparent)`,
+                      }}
                     >
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          size={12}
-                          weight={s <= log.quality ? 'fill' : 'duotone'}
-                          style={{
-                            color:
-                              s <= log.quality
-                                ? 'var(--color-accent)'
-                                : 'var(--color-text-muted)',
-                          }}
-                        />
-                      ))}
+                      <span
+                        style={{
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: 700,
+                          color: getHoursColor(log.totalHours),
+                        }}
+                      >
+                        {log.totalHours}ч
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Time range + quality */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Clock
+                        size={14}
+                        weight="duotone"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 'var(--text-sm)',
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        {log.bedTime} → {log.wakeTime}
+                      </span>
                     </div>
 
-                    {/* Wake-ups */}
-                    {log.wakeUps > 0 && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      {/* Quality Stars */}
+                      <div
+                        style={{ display: 'flex', gap: '1px' }}
+                        aria-label={`Качество: ${log.quality} из 5`}
+                      >
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            size={12}
+                            weight={s <= log.quality ? 'fill' : 'duotone'}
+                            style={{
+                              color:
+                                s <= log.quality
+                                  ? 'var(--color-accent)'
+                                  : 'var(--color-text-muted)',
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Wake-ups */}
+                      {log.wakeUps > 0 && (
+                        <span
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--color-text-muted)',
+                            marginLeft: '6px',
+                          }}
+                        >
+                          {log.wakeUps}x
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notes preview (collapsed) */}
+                  {log.notes && !isExpanded && (
+                    <p
+                      style={{
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--color-text-muted)',
+                        marginTop: '8px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {log.notes}
+                    </p>
+                  )}
+
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div
+                      style={{
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--color-border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        animation: 'var(--animate-fade-in)',
+                      }}
+                    >
+                      {log.notes && (
+                        <p
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--color-text-muted)',
+                            margin: 0,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {log.notes}
+                        </p>
+                      )}
                       <span
                         style={{
                           fontSize: 'var(--text-xs)',
-                          color: 'var(--color-text-muted)',
-                          marginLeft: '6px',
+                          color: 'var(--color-text-secondary)',
                         }}
                       >
-                        {log.wakeUps}x
+                        Пробуждения: {log.wakeUps} пробуждений за ночь
                       </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Notes preview */}
-                {log.notes && (
-                  <p
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--color-text-muted)',
-                      marginTop: '8px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {log.notes}
-                  </p>
-                )}
-              </div>
-            ))}
+                      <span
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        Качество: {QUALITY_LABELS[log.quality] ?? log.quality}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

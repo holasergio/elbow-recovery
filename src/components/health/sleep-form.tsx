@@ -179,6 +179,7 @@ export function SleepForm({ onSaved }: { onSaved?: () => void }) {
   const [wakeUps, setWakeUps] = useState(0)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<FormStatus>('idle')
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
 
   const totalHours = useMemo(
     () => calculateHours(bedTime, wakeTime),
@@ -192,16 +193,17 @@ export function SleepForm({ onSaved }: { onSaved?: () => void }) {
     setWakeUps(0)
     setNotes('')
     setStatus('idle')
+    setDate(new Date().toISOString().split('T')[0])
   }, [])
 
   const handleSubmit = useCallback(async () => {
     setStatus('saving')
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const targetDate = date
 
       await db.sleepLogs.put({
-        date: today,
+        date: targetDate,
         bedTime,
         wakeTime,
         totalHours,
@@ -275,6 +277,43 @@ export function SleepForm({ onSaved }: { onSaved?: () => void }) {
         gap: '24px',
       }}
     >
+      {/* Date selector */}
+      <div>
+        <label
+          htmlFor="sleep-date"
+          style={{
+            display: 'block',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 500,
+            color: 'var(--color-text-secondary)',
+            marginBottom: '8px',
+          }}
+        >
+          Дата
+        </label>
+        <input
+          id="sleep-date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          max={new Date().toISOString().split('T')[0]}
+          min={(() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0] })()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+            color: 'var(--color-text)',
+            fontSize: 'var(--text-base)',
+            fontFamily: 'var(--font-body)',
+            outline: 'none',
+            transition: 'border-color 0.15s ease',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)' }}
+        />
+      </div>
       {/* Time Inputs */}
       <div
         style={{

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FloppyDisk, CheckCircle, Crosshair } from '@phosphor-icons/react'
+import { FloppyDisk, CheckCircle, Crosshair, Trophy, Target, ArrowUp } from '@phosphor-icons/react'
 import { db } from '@/lib/db'
 import { getCurrentPhase } from '@/data/patient'
 import { phases } from '@/data/phases'
 import { ROMPhoto } from './rom-photo'
 import { AngleMeasurer } from './angle-measurer'
+import { interpretROM } from '@/lib/rom-interpretation'
+import { useROMHistory } from '@/hooks/use-rom'
 
 function getArcColor(arc: number, targetMin: number): string {
   if (arc >= targetMin) return 'var(--color-success)'
@@ -83,6 +85,9 @@ export function ROMInput() {
   const targetMin = phase?.romTarget.min ?? 0
   const targetMax = phase?.romTarget.max ?? 180
 
+  const { measurements } = useROMHistory()
+  const previousArc = measurements && measurements.length > 1 ? measurements[measurements.length - 2]?.arc : undefined
+
   const handleAngleResult = useCallback((angle: number) => {
     if (analyzeTarget === 'flexion') {
       setFlexion(angle)
@@ -139,6 +144,7 @@ export function ROMInput() {
   }, [flexion, extensionDeficit, pronation, supination, arc, photoFlexion, photoExtension, measuredBy, notes, isSaving, aiFlexion, aiExtension])
 
   if (saved) {
+    const interp = interpretROM(arc, phaseNum, targetMin, targetMax, previousArc)
     return (
       <div style={{
         padding: '24px',
@@ -146,24 +152,88 @@ export function ROMInput() {
         backgroundColor: 'var(--color-surface)',
         boxShadow: 'var(--shadow-md)',
         border: '1px solid var(--color-border)',
-        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
       }}>
-        <CheckCircle size={48} weight="duotone" style={{ color: 'var(--color-success)', margin: '0 auto 12px' }} />
-        <p style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'var(--text-xl)',
-          fontWeight: 600,
-          color: 'var(--color-text)',
+        <div style={{ textAlign: 'center' }}>
+          <CheckCircle size={48} weight="duotone" style={{ color: 'var(--color-success)', margin: '0 auto 8px' }} />
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', fontWeight: 600, color: 'var(--color-text)' }}>
+            Замер сохранён
+          </p>
+        </div>
+
+        {/* Big angle */}
+        <div style={{
+          textAlign: 'center',
+          padding: '16px',
+          borderRadius: 'var(--radius-md)',
+          backgroundColor: interp.phaseStatus === 'ahead' ? 'var(--color-primary-light)' : interp.phaseStatus === 'on-track' ? 'var(--color-primary-light)' : 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
         }}>
-          Замер сохранён
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-5xl)', fontWeight: 700, color: 'var(--color-primary)' }}>
+            {arc}°
+          </span>
+          {interp.weeklyChange && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              <ArrowUp size={14} weight="bold" style={{ color: 'var(--color-success)' }} />
+              {interp.weeklyChange}
+            </p>
+          )}
+        </div>
+
+        {/* Summary */}
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
+          {interp.summary}
         </p>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: '8px', fontSize: 'var(--text-sm)' }}>
-          Дуга: <strong>{arc}°</strong>
-          {arc >= targetMin
-            ? ` — в пределах цели фазы ${phaseNum} (${targetMin}–${targetMax}°)`
-            : ` — ниже цели фазы ${phaseNum} (${targetMin}–${targetMax}°), продолжай упражнения`
-          }
-        </p>
+
+        {/* Next milestone */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '12px', borderRadius: 'var(--radius-md)',
+          backgroundColor: 'var(--color-accent-light)',
+        }}>
+          <Target size={18} weight="duotone" style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{interp.functionalNext}</span>
+        </div>
+
+        {/* Can do */}
+        {interp.canDo.length > 0 && (
+          <div>
+            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-success)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Доступно сейчас
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {interp.canDo.map(item => (
+                <span key={item} style={{
+                  fontSize: 'var(--text-xs)', padding: '4px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                  color: 'var(--color-success)',
+                }}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Cant yet — show only next 3 */}
+        {interp.cantYet.length > 0 && (
+          <div>
+            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Следующие цели
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {interp.cantYet.slice(0, 3).map(item => (
+                <span key={item} style={{
+                  fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)',
+                }}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -203,9 +273,15 @@ export function ROMInput() {
 
       {/* Flexion */}
       <NumberField label="Сгибание" value={flexion} onChange={setFlexion} min={0} max={180} />
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '-12px', lineHeight: 1.4 }}>
+        Угол максимального сгибания. Согните руку и измерьте угол между плечом и предплечьем.
+      </p>
 
       {/* Extension deficit */}
       <NumberField label="Дефицит разг." value={extensionDeficit} onChange={setExtensionDeficit} min={0} max={90} />
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '-12px', lineHeight: 1.4 }}>
+        Сколько градусов не хватает до полного разгибания. 0° = рука полностью прямая.
+      </p>
 
       {/* Computed arc */}
       <div style={{

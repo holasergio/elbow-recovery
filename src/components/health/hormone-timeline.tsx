@@ -59,6 +59,21 @@ const HORMONE_WINDOWS: HormoneWindow[] = [
   },
 ]
 
+const HORMONE_DESCRIPTIONS: Record<string, string> = {
+  'Мелатонин':
+    'Гормон сна. Вырабатывается при снижении освещённости. Регулирует циркадный ритм и запускает восстановительные процессы.',
+  'Гормон роста':
+    'Ключевой для регенерации кости. 60-70% суточной дозы выделяется в первые 2 часа глубокого сна. Стимулирует остеобласты.',
+  'Глубокий сон':
+    'Фаза максимальной репарации тканей. Иммунная система активна, воспаление снижается, мышцы восстанавливаются.',
+  'Кортизол ↑':
+    'Гормон бодрости. Растёт к утру, готовя организм к пробуждению. Умеренный уровень необходим для метаболизма кости.',
+  'Тестостерон':
+    'Влияет на плотность костной ткани и мышечную силу. Пик выработки — ранние утренние часы во время REM-сна.',
+  'Пробуждение':
+    'Оптимальное время подъёма. Кортизол на пике, мелатонин подавлен — организм готов к активности.',
+}
+
 const TIMELINE_START = 22 // 22:00
 const TIMELINE_END = 32 // 08:00 next day (22 + 10)
 const TOTAL_HOURS = TIMELINE_END - TIMELINE_START
@@ -85,6 +100,7 @@ interface HormoneTimelineProps {
 
 export function HormoneTimeline({ todaySleep }: HormoneTimelineProps) {
   const [expanded, setExpanded] = useState(false)
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
   // Check if user missed the GH window (bed after 23:00)
   const missedGHWindow = (() => {
@@ -150,8 +166,14 @@ export function HormoneTimeline({ todaySleep }: HormoneTimelineProps) {
               ((window.endHour - window.startHour) / TOTAL_HOURS) * 100
 
             return (
-              <div
+              <button
                 key={window.label}
+                type="button"
+                onClick={() =>
+                  setActiveTooltip(
+                    activeTooltip === window.label ? null : window.label
+                  )
+                }
                 style={{
                   width: `${widthPercent}%`,
                   backgroundColor: `color-mix(in srgb, ${window.color} ${window.bgOpacity}, transparent)`,
@@ -161,6 +183,15 @@ export function HormoneTimeline({ todaySleep }: HormoneTimelineProps) {
                   justifyContent: 'center',
                   overflow: 'hidden',
                   position: 'relative',
+                  cursor: 'pointer',
+                  border: 'none',
+                  padding: 0,
+                  height: '100%',
+                  outline:
+                    activeTooltip === window.label
+                      ? `2px solid ${window.color}`
+                      : 'none',
+                  outlineOffset: '-2px',
                 }}
               >
                 <span
@@ -176,7 +207,7 @@ export function HormoneTimeline({ todaySleep }: HormoneTimelineProps) {
                 >
                   {window.label}
                 </span>
-              </div>
+              </button>
             )
           })}
 
@@ -219,6 +250,40 @@ export function HormoneTimeline({ todaySleep }: HormoneTimelineProps) {
             </span>
           ))}
         </div>
+        {/* Tooltip */}
+        {activeTooltip && (
+          <div
+            style={{
+              marginTop: '8px',
+              padding: '12px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-border)',
+              animation: 'var(--animate-fade-in)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                color: 'var(--color-text)',
+                marginBottom: '4px',
+              }}
+            >
+              {activeTooltip}
+            </p>
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              {HORMONE_DESCRIPTIONS[activeTooltip]}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* GH Window Warning */}
