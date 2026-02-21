@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 
@@ -16,6 +16,7 @@ function useCalendarColors() {
     textMuted: '#9C9690',
     border: '#E5E0D8',
     surface: '#FFFFFF',
+    accent: '#D4A76A',
   })
 
   useEffect(() => {
@@ -29,6 +30,7 @@ function useCalendarColors() {
         textMuted: get('--color-text-muted', '#9C9690'),
         border: get('--color-border', '#E5E0D8'),
         surface: get('--color-surface', '#FFFFFF'),
+        accent: get('--color-accent', '#D4A76A'),
       })
     }
 
@@ -50,8 +52,16 @@ function useCalendarColors() {
 // Helpers
 // ──────────────────────────────────────────────
 
-const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-const WEEKS_TO_SHOW = 12
+const MONTH_LABELS = [
+  'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+  'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
+]
+
+const DAY_LABELS: { label: string; row: number }[] = [
+  { label: 'Пн', row: 0 },
+  { label: 'Ср', row: 2 },
+  { label: 'Пт', row: 4 },
+]
 
 function toDateStr(d: Date): string {
   const y = d.getFullYear()
@@ -66,20 +76,29 @@ function getMondayIndex(d: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1
 }
 
-/** Get the Monday of the week for a given date */
-function getMonday(d: Date): Date {
-  const result = new Date(d)
-  const idx = getMondayIndex(d)
-  result.setDate(result.getDate() - idx)
-  result.setHours(0, 0, 0, 0)
-  return result
-}
-
 function getIntensityLevel(count: number): number {
   if (count === 0) return 0
   if (count <= 2) return 1
   if (count <= 4) return 2
   return 3
+}
+
+function pluralSessions(count: number): string {
+  if (count === 1) return 'сессия'
+  if (count >= 2 && count <= 4) return 'сессии'
+  return 'сессий'
+}
+
+// ──────────────────────────────────────────────
+// Grid cell data
+// ──────────────────────────────────────────────
+
+interface CellData {
+  date: Date
+  dateStr: string
+  count: number
+  hasRom: boolean
+  inYear: boolean // whether this cell belongs to the current year
 }
 
 // ──────────────────────────────────────────────
@@ -88,31 +107,38 @@ function getIntensityLevel(count: number): number {
 
 export function StreakCalendar() {
   const colors = useCalendarColors()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const todayMarkerRef = useRef<HTMLDivElement>(null)
 
-  // Calculate the date range: 12 weeks back from this Monday
+  const currentYear = new Date().getFullYear()
   const today = new Date()
-  const thisMonday = getMonday(today)
+  const todayStr = toDateStr(today)
 
-  const startDate = useMemo(() => {
-    const d = new Date(thisMonday)
-    d.setDate(d.getDate() - (WEEKS_TO_SHOW - 1) * 7)
-    return d
-  }, [thisMonday.getTime()])
+  // Year boundaries as date strings for DB queries
+  const yearStart = `${currentYear}-01-01`
+  const yearEnd = `${currentYear}-12-31`
 
-  const startStr = toDateStr(startDate)
-  const endStr = toDateStr(today)
-
-  // Query exercise sessions in the date range
+  // Query exercise sessions for the full year
   const sessions = useLiveQuery(
     () =>
       db.exerciseSessions
         .where('date')
-        .between(startStr, endStr, true, true)
+        .between(yearStart, yearEnd, true, true)
         .toArray(),
-    [startStr, endStr],
+    [yearStart, yearEnd],
   )
 
-  // Build date -> count map
+  // Query ROM measurements for the full year
+  const romMeasurements = useLiveQuery(
+    () =>
+      db.romMeasurements
+        .where('date')
+        .between(yearStart, yearEnd, true, true)
+        .toArray(),
+    [yearStart, yearEnd],
+  )
+
+  // Build date -> session count map
   const countMap = useMemo(() => {
     const map = new Map<string, number>()
     if (!sessions) return map
@@ -122,176 +148,322 @@ export function StreakCalendar() {
     return map
   }, [sessions])
 
-  // Build grid: columns = weeks, rows = days (Mon-Sun)
-  const grid = useMemo(() => {
-    const weeks: { date: Date; dateStr: string; count: number }[][] = []
+  // Build date -> has ROM measurement set
+  const romSet = useMemo(() => {
+    const set = new Set<string>()
+    if (!romMeasurements) return set
+    for (const r of romMeasurements) {
+      set.add(r.date)
+    }
+    return set
+  }, [romMeasurements])
 
-    for (let w = 0; w < WEEKS_TO_SHOW; w++) {
-      const weekDays: { date: Date; dateStr: string; count: number }[] = []
+  // Build the full-year grid:
+  // - Find Jan 1 of current year
+  // - Find the Monday of that week (may be in the previous year)
+  // - Build weekly columns until we pass Dec 31
+  const { grid, monthPositions, todayWeekIdx } = useMemo(() => {
+    const jan1 = new Date(currentYear, 0, 1)
+    const jan1DayIdx = getMondayIndex(jan1)
+
+    // Start from the Monday of the week containing Jan 1
+    const gridStart = new Date(jan1)
+    gridStart.setDate(gridStart.getDate() - jan1DayIdx)
+    gridStart.setHours(0, 0, 0, 0)
+
+    const dec31 = new Date(currentYear, 11, 31)
+
+    const weeks: CellData[][] = []
+    let currentDate = new Date(gridStart)
+    let foundTodayWeek = -1
+
+    // Build weeks until we've covered Dec 31
+    while (true) {
+      const weekDays: CellData[] = []
+      let weekHasYearDay = false
+
       for (let d = 0; d < 7; d++) {
-        const cellDate = new Date(startDate)
-        cellDate.setDate(cellDate.getDate() + w * 7 + d)
+        const cellDate = new Date(currentDate)
+        cellDate.setDate(cellDate.getDate() + d)
         const dateStr = toDateStr(cellDate)
+        const inYear = cellDate.getFullYear() === currentYear
+
+        if (inYear) weekHasYearDay = true
+
+        if (dateStr === todayStr) {
+          foundTodayWeek = weeks.length
+        }
+
         weekDays.push({
           date: cellDate,
           dateStr,
           count: countMap.get(dateStr) ?? 0,
+          hasRom: romSet.has(dateStr),
+          inYear,
         })
       }
+
       weeks.push(weekDays)
+
+      // Move to next Monday
+      currentDate.setDate(currentDate.getDate() + 7)
+
+      // Stop if the previous week already covered Dec 31
+      // We check if Monday of next week is past Dec 31 AND the last week had a year day
+      if (currentDate > dec31 && weekHasYearDay) {
+        // Check if we need one more partial week
+        // If Dec 31 is not Sunday, the last week already captured it
+        break
+      }
+
+      // Safety: don't go past 54 weeks
+      if (weeks.length >= 54) break
     }
 
-    return weeks
-  }, [startDate.getTime(), countMap])
+    // Calculate month label positions
+    // For each month, find the first week column where that month's first day appears
+    const monthPos: { month: number; weekIdx: number }[] = []
+    const seenMonths = new Set<number>()
+
+    for (let w = 0; w < weeks.length; w++) {
+      for (let d = 0; d < 7; d++) {
+        const cell = weeks[w][d]
+        if (cell.inYear) {
+          const month = cell.date.getMonth()
+          if (!seenMonths.has(month)) {
+            seenMonths.add(month)
+            monthPos.push({ month, weekIdx: w })
+          }
+        }
+      }
+    }
+
+    return {
+      grid: weeks,
+      monthPositions: monthPos,
+      todayWeekIdx: foundTodayWeek,
+    }
+  }, [currentYear, countMap, romSet, todayStr])
 
   // Intensity colors (4 levels: 0, 1, 2, 3)
   const intensityColors = useMemo(() => {
     const base = colors.primary
     return [
-      colors.surfaceAlt, // level 0: empty
-      `${base}40`,       // level 1: light (25% opacity)
-      `${base}80`,       // level 2: medium (50% opacity)
-      base,              // level 3: full
+      colors.surfaceAlt,   // level 0: empty
+      `${base}40`,         // level 1: ~25% opacity
+      `${base}80`,         // level 2: ~50% opacity
+      base,                // level 3: full
     ]
   }, [colors.primary, colors.surfaceAlt])
 
-  const cellSize = 14
-  const cellGap = 3
-  const labelWidth = 24
+  const cellSize = 12
+  const cellGap = 2
+  const labelWidth = 28
 
-  // Month labels for the top
-  const monthLabels = useMemo(() => {
-    const labels: { text: string; weekIdx: number }[] = []
-    let lastMonth = -1
-
-    for (let w = 0; w < grid.length; w++) {
-      // Use the Monday of each week
-      const mondayOfWeek = grid[w][0].date
-      const month = mondayOfWeek.getMonth()
-      if (month !== lastMonth) {
-        labels.push({
-          text: mondayOfWeek.toLocaleDateString('ru-RU', { month: 'short' }),
-          weekIdx: w,
-        })
-        lastMonth = month
-      }
+  // Auto-scroll to show current week
+  useEffect(() => {
+    if (scrollRef.current && todayWeekIdx >= 0) {
+      const scrollContainer = scrollRef.current
+      // Position of the current week in pixels
+      const targetScrollLeft = todayWeekIdx * (cellSize + cellGap) - scrollContainer.clientWidth / 2
+      scrollContainer.scrollLeft = Math.max(0, targetScrollLeft)
     }
+  }, [todayWeekIdx, grid.length])
 
-    return labels
-  }, [grid])
+  const isFuture = (d: Date) => {
+    const dStr = toDateStr(d)
+    return dStr > todayStr
+  }
 
-  const isFuture = (d: Date) => d > today
+  const isToday = (dateStr: string) => dateStr === todayStr
+
+  // Total grid width for positioning month labels
+  const gridWidth = grid.length * (cellSize + cellGap) - cellGap
 
   return (
     <div
       style={{
-        backgroundColor: colors.surface,
-        borderRadius: '16px',
-        border: `1px solid ${colors.border}`,
+        backgroundColor: 'var(--color-surface)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)',
         padding: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: 'var(--shadow-sm)',
       }}
     >
-      {/* Month labels row */}
+      {/* Scrollable container */}
       <div
+        ref={scrollRef}
         style={{
-          display: 'flex',
-          marginLeft: `${labelWidth}px`,
-          marginBottom: '4px',
-          fontSize: '10px',
-          color: colors.textMuted,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          paddingBottom: '4px',
         }}
       >
-        {monthLabels.map((ml, i) => (
-          <span
-            key={i}
+        {/* Inner wrapper with fixed width to contain grid + labels */}
+        <div
+          style={{
+            display: 'inline-flex',
+            flexDirection: 'column',
+            minWidth: `${labelWidth + gridWidth + 8}px`,
+          }}
+        >
+          {/* Month labels row */}
+          <div
             style={{
-              position: 'absolute' as const,
-              marginLeft: `${ml.weekIdx * (cellSize + cellGap)}px`,
+              position: 'relative',
+              height: '16px',
+              marginLeft: `${labelWidth + 4}px`,
+              marginBottom: '4px',
+              width: `${gridWidth}px`,
             }}
           >
-            {ml.text}
-          </span>
-        ))}
-      </div>
+            {monthPositions.map((mp) => (
+              <span
+                key={mp.month}
+                style={{
+                  position: 'absolute',
+                  left: `${mp.weekIdx * (cellSize + cellGap)}px`,
+                  top: 0,
+                  fontSize: '10px',
+                  color: 'var(--color-text-muted)',
+                  lineHeight: '16px',
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                }}
+              >
+                {MONTH_LABELS[mp.month]}
+              </span>
+            ))}
+          </div>
 
-      <div style={{ display: 'flex', marginTop: '16px' }}>
-        {/* Day labels column */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: `${cellGap}px`,
-            marginRight: '4px',
-            flexShrink: 0,
-            width: `${labelWidth}px`,
-          }}
-        >
-          {DAY_LABELS.map((label, i) => (
+          {/* Grid area: day labels + cells */}
+          <div style={{ display: 'flex' }}>
+            {/* Day labels column */}
             <div
-              key={i}
-              style={{
-                height: `${cellSize}px`,
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: '10px',
-                color: colors.textMuted,
-                lineHeight: 1,
-              }}
-            >
-              {i % 2 === 0 ? label : ''}
-            </div>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div
-          style={{
-            display: 'flex',
-            gap: `${cellGap}px`,
-            overflow: 'hidden',
-          }}
-        >
-          {grid.map((week, wIdx) => (
-            <div
-              key={wIdx}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: `${cellGap}px`,
+                marginRight: '4px',
+                flexShrink: 0,
+                width: `${labelWidth}px`,
               }}
             >
-              {week.map((day, dIdx) => {
-                const future = isFuture(day.date)
-                const level = future ? 0 : getIntensityLevel(day.count)
-
+              {Array.from({ length: 7 }).map((_, i) => {
+                const dayLabel = DAY_LABELS.find((dl) => dl.row === i)
                 return (
                   <div
-                    key={dIdx}
-                    title={
-                      future
-                        ? ''
-                        : `${day.dateStr}: ${day.count} ${day.count === 1 ? 'сессия' : day.count >= 2 && day.count <= 4 ? 'сессии' : 'сессий'}`
-                    }
+                    key={i}
                     style={{
-                      width: `${cellSize}px`,
                       height: `${cellSize}px`,
-                      borderRadius: '3px',
-                      backgroundColor: future
-                        ? 'transparent'
-                        : intensityColors[level],
-                      border: future
-                        ? `1px dashed ${colors.border}`
-                        : level === 0
-                          ? `1px solid ${colors.border}`
-                          : 'none',
-                      transition: 'background-color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '9px',
+                      color: 'var(--color-text-muted)',
+                      lineHeight: 1,
+                      userSelect: 'none',
                     }}
-                  />
+                  >
+                    {dayLabel?.label ?? ''}
+                  </div>
                 )
               })}
             </div>
-          ))}
+
+            {/* Heatmap grid */}
+            <div
+              style={{
+                display: 'flex',
+                gap: `${cellGap}px`,
+              }}
+            >
+              {grid.map((week, wIdx) => (
+                <div
+                  key={wIdx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: `${cellGap}px`,
+                  }}
+                >
+                  {week.map((day, dIdx) => {
+                    const future = isFuture(day.date)
+                    const todayCell = isToday(day.dateStr)
+                    const level = future || !day.inYear ? 0 : getIntensityLevel(day.count)
+                    const showRomDot = day.hasRom && day.inYear
+
+                    // Cells outside the current year: invisible
+                    if (!day.inYear) {
+                      return (
+                        <div
+                          key={dIdx}
+                          style={{
+                            width: `${cellSize}px`,
+                            height: `${cellSize}px`,
+                            borderRadius: '2px',
+                          }}
+                        />
+                      )
+                    }
+
+                    let backgroundColor: string
+                    let border: string
+
+                    if (todayCell) {
+                      backgroundColor = future ? 'transparent' : intensityColors[level]
+                      border = '2px solid var(--color-primary)'
+                    } else if (future) {
+                      backgroundColor = 'transparent'
+                      border = `1px dashed var(--color-border)`
+                    } else if (level === 0) {
+                      backgroundColor = intensityColors[0]
+                      border = `1px solid var(--color-border)`
+                    } else {
+                      backgroundColor = intensityColors[level]
+                      border = 'none'
+                    }
+
+                    const title = future
+                      ? day.dateStr
+                      : `${day.dateStr}: ${day.count} ${pluralSessions(day.count)}${showRomDot ? ' + замер ROM' : ''}`
+
+                    return (
+                      <div
+                        key={dIdx}
+                        ref={todayCell ? todayMarkerRef : undefined}
+                        title={title}
+                        style={{
+                          position: 'relative',
+                          width: `${cellSize}px`,
+                          height: `${cellSize}px`,
+                          borderRadius: '2px',
+                          backgroundColor,
+                          border,
+                          transition: 'background-color 0.2s',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        {/* ROM measurement golden dot */}
+                        {showRomDot && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '1px',
+                              right: '1px',
+                              width: '4px',
+                              height: '4px',
+                              borderRadius: '50%',
+                              backgroundColor: 'var(--color-accent)',
+                            }}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -300,11 +472,12 @@ export function StreakCalendar() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: '6px',
           justifyContent: 'flex-end',
-          marginTop: '8px',
+          marginTop: '10px',
           fontSize: '10px',
-          color: colors.textMuted,
+          color: 'var(--color-text-muted)',
+          flexWrap: 'wrap',
         }}
       >
         <span>Мало</span>
@@ -316,11 +489,41 @@ export function StreakCalendar() {
               height: '10px',
               borderRadius: '2px',
               backgroundColor: c,
-              border: i === 0 ? `1px solid ${colors.border}` : 'none',
+              border: i === 0 ? '1px solid var(--color-border)' : 'none',
             }}
           />
         ))}
         <span>Много</span>
+
+        {/* Separator */}
+        <div
+          style={{
+            width: '1px',
+            height: '10px',
+            backgroundColor: 'var(--color-border)',
+            marginLeft: '4px',
+            marginRight: '4px',
+          }}
+        />
+
+        {/* ROM legend */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <div
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-accent)',
+            }}
+          />
+          <span>Замер ROM</span>
+        </div>
       </div>
     </div>
   )

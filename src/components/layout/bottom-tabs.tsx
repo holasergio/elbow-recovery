@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, Barbell, ChartLineUp, Heart, GearSix } from '@phosphor-icons/react'
+import { House, ListChecks, ChartLineUp, Heart, GearSix } from '@phosphor-icons/react'
 
 const tabs = [
   { href: '/', label: 'Сегодня', icon: House },
-  { href: '/session', label: 'Сессия', icon: Barbell },
+  { href: '/exercises', label: 'Упражнения', icon: ListChecks },
   { href: '/progress', label: 'Прогресс', icon: ChartLineUp },
   { href: '/health', label: 'Здоровье', icon: Heart },
   { href: '/settings', label: 'Настройки', icon: GearSix },
