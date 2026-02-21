@@ -212,11 +212,28 @@ export function ROMInput() {
       <div style={{ borderTop: '1px solid var(--color-border)' }} />
 
       {/* Pronation / Supination (optional) */}
-      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: '-12px' }}>
-        Необязательно
-      </p>
-      <NumberField label="Пронация" value={pronation} onChange={setPronation} min={0} max={180} />
-      <NumberField label="Супинация" value={supination} onChange={setSupination} min={0} max={180} />
+      <div>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', fontWeight: 500, marginBottom: '4px' }}>
+          Ротация предплечья
+        </p>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+          Необязательно. Согни локоть 90° и прижми к телу.
+        </p>
+      </div>
+
+      <div>
+        <NumberField label="Пронация" value={pronation} onChange={setPronation} min={0} max={180} />
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px', marginLeft: '132px', lineHeight: 1.4 }}>
+          Вращение ладонью вниз. Норма: 75–80°
+        </p>
+      </div>
+
+      <div>
+        <NumberField label="Супинация" value={supination} onChange={setSupination} min={0} max={180} />
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px', marginLeft: '132px', lineHeight: 1.4 }}>
+          Вращение ладонью вверх. Норма: 80–85°
+        </p>
+      </div>
 
       {/* Separator */}
       <div style={{ borderTop: '1px solid var(--color-border)' }} />

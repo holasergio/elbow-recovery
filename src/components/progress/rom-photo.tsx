@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback } from 'react'
-import { Camera, Trash } from '@phosphor-icons/react'
+import { Camera, Trash, ImageSquare } from '@phosphor-icons/react'
 
 async function compressImage(file: File, maxSize = 1200, quality = 0.7): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,7 +79,6 @@ export function ROMPhoto({ label, value, onChange }: ROMPhotoProps) {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileChange}
         style={{ display: 'none' }}
         aria-label={label}
@@ -145,9 +144,12 @@ export function ROMPhoto({ label, value, onChange }: ROMPhotoProps) {
           }}
           aria-label={`Сделать ${label.toLowerCase()}`}
         >
-          <Camera size={28} weight="duotone" />
-          <span style={{ fontSize: 'var(--text-xs)' }}>
-            {isCompressing ? 'Сжатие...' : 'Фото'}
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <Camera size={22} weight="duotone" />
+            <ImageSquare size={22} weight="duotone" />
+          </div>
+          <span style={{ fontSize: 'var(--text-xs)', lineHeight: 1.2, textAlign: 'center' }}>
+            {isCompressing ? 'Сжатие...' : 'Камера / Галерея'}
           </span>
         </button>
       )}
