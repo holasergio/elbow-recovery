@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { fraunces, dmSans } from "@/lib/fonts";
 import StorageInit from "@/components/storage-init";
-import { ServiceWorkerRegister } from "@/components/sw-register";
+import { ServiceWorkerProvider } from "@/components/sw-register";
+import { UpdatePrompt } from "@/components/update-prompt";
 import { ThemeProvider } from "@/providers/theme-provider";
 import "./globals.css";
 
@@ -36,9 +37,11 @@ export default function RootLayout({
     <html lang="ru" className={`${fraunces.variable} ${dmSans.variable}`}>
       <body className="font-body bg-bg text-text antialiased">
         <ThemeProvider>
-          <StorageInit />
-          {children}
-          <ServiceWorkerRegister />
+          <ServiceWorkerProvider>
+            <StorageInit />
+            {children}
+            <UpdatePrompt />
+          </ServiceWorkerProvider>
         </ThemeProvider>
       </body>
     </html>
