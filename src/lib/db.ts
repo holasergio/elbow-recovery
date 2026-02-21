@@ -28,6 +28,8 @@ export interface ROMMeasurement {
   photoExtension?: string; // base64 or blob URL
   measuredBy: 'self' | 'physio';
   notes?: string;
+  aiMeasuredFlexion?: number;
+  aiMeasuredExtension?: number;
 }
 
 export interface PainEntry {

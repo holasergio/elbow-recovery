@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FloppyDisk, CheckCircle } from '@phosphor-icons/react'
+import { FloppyDisk, CheckCircle, Crosshair } from '@phosphor-icons/react'
 import { db } from '@/lib/db'
 import { getCurrentPhase } from '@/data/patient'
 import { phases } from '@/data/phases'
 import { ROMPhoto } from './rom-photo'
+import { AngleMeasurer } from './angle-measurer'
 
 function getArcColor(arc: number, targetMin: number): string {
   if (arc >= targetMin) return 'var(--color-success)'
@@ -71,12 +72,28 @@ export function ROMInput() {
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [analyzingPhoto, setAnalyzingPhoto] = useState<string | null>(null)
+  const [analyzeTarget, setAnalyzeTarget] = useState<'flexion' | 'extension'>('flexion')
+  const [aiFlexion, setAiFlexion] = useState<number | undefined>()
+  const [aiExtension, setAiExtension] = useState<number | undefined>()
 
   const arc = flexion - extensionDeficit
   const phaseNum = getCurrentPhase()
   const phase = phases.find(p => p.number === phaseNum)
   const targetMin = phase?.romTarget.min ?? 0
   const targetMax = phase?.romTarget.max ?? 180
+
+  const handleAngleResult = useCallback((angle: number) => {
+    if (analyzeTarget === 'flexion') {
+      setFlexion(angle)
+      setAiFlexion(angle)
+    } else {
+      const deficit = Math.max(0, 180 - angle)
+      setExtensionDeficit(deficit)
+      setAiExtension(deficit)
+    }
+    setAnalyzingPhoto(null)
+  }, [analyzeTarget])
 
   const handleSave = useCallback(async () => {
     if (isSaving) return
@@ -95,6 +112,8 @@ export function ROMInput() {
         photoExtension,
         measuredBy,
         notes: notes.trim() || undefined,
+        aiMeasuredFlexion: aiFlexion,
+        aiMeasuredExtension: aiExtension,
       })
 
       setSaved(true)
@@ -108,6 +127,8 @@ export function ROMInput() {
         setPhotoFlexion(undefined)
         setPhotoExtension(undefined)
         setNotes('')
+        setAiFlexion(undefined)
+        setAiExtension(undefined)
         setSaved(false)
       }, 3000)
     } catch (err) {
@@ -115,7 +136,7 @@ export function ROMInput() {
     } finally {
       setIsSaving(false)
     }
-  }, [flexion, extensionDeficit, pronation, supination, arc, photoFlexion, photoExtension, measuredBy, notes, isSaving])
+  }, [flexion, extensionDeficit, pronation, supination, arc, photoFlexion, photoExtension, measuredBy, notes, isSaving, aiFlexion, aiExtension])
 
   if (saved) {
     return (
@@ -295,10 +316,41 @@ export function ROMInput() {
         </div>
       </div>
 
+      {/* Photo guide for AI measurement */}
+      <div style={{
+        padding: '12px 16px',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--color-accent-light)',
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'flex-start',
+      }}>
+        <Crosshair size={18} weight="duotone" style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }} />
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
+          <strong>AI-замер:</strong> Сфотографируйте руку сбоку, чтобы были видны плечо, локоть и запястье. После загрузки нажмите «AI».
+        </p>
+      </div>
+
       {/* Photo capture */}
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-        <ROMPhoto label="Фото сгибания" value={photoFlexion} onChange={setPhotoFlexion} />
-        <ROMPhoto label="Фото разгибания" value={photoExtension} onChange={setPhotoExtension} />
+        <ROMPhoto
+          label="Фото сгибания"
+          value={photoFlexion}
+          onChange={setPhotoFlexion}
+          onMeasureAngle={photoFlexion ? () => {
+            setAnalyzeTarget('flexion')
+            setAnalyzingPhoto(photoFlexion)
+          } : undefined}
+        />
+        <ROMPhoto
+          label="Фото разгибания"
+          value={photoExtension}
+          onChange={setPhotoExtension}
+          onMeasureAngle={photoExtension ? () => {
+            setAnalyzeTarget('extension')
+            setAnalyzingPhoto(photoExtension)
+          } : undefined}
+        />
       </div>
 
       {/* Notes */}
@@ -357,6 +409,14 @@ export function ROMInput() {
         <FloppyDisk size={20} weight="duotone" />
         {isSaving ? 'Сохранение...' : 'Сохранить'}
       </button>
+
+      {analyzingPhoto && (
+        <AngleMeasurer
+          photoDataUrl={analyzingPhoto}
+          onResult={handleAngleResult}
+          onClose={() => setAnalyzingPhoto(null)}
+        />
+      )}
     </div>
   )
 }

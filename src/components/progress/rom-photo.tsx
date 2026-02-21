@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback } from 'react'
-import { Camera, Trash, ImageSquare } from '@phosphor-icons/react'
+import { Camera, Trash, ImageSquare, Crosshair } from '@phosphor-icons/react'
 
 async function compressImage(file: File, maxSize = 1200, quality = 0.7): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -33,9 +33,10 @@ interface ROMPhotoProps {
   label: string
   value?: string
   onChange: (dataUrl: string | undefined) => void
+  onMeasureAngle?: () => void
 }
 
-export function ROMPhoto({ label, value, onChange }: ROMPhotoProps) {
+export function ROMPhoto({ label, value, onChange, onMeasureAngle }: ROMPhotoProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isCompressing, setIsCompressing] = useState(false)
 
@@ -121,6 +122,35 @@ export function ROMPhoto({ label, value, onChange }: ROMPhotoProps) {
           >
             <Trash size={14} weight="bold" />
           </button>
+          {onMeasureAngle && (
+            <button
+              type="button"
+              onClick={onMeasureAngle}
+              style={{
+                position: 'absolute',
+                bottom: '-8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '3px 10px',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--color-accent)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-accent)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                whiteSpace: 'nowrap',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+              aria-label={`AI замер угла по ${label.toLowerCase()}`}
+            >
+              <Crosshair size={12} weight="duotone" />
+              AI
+            </button>
+          )}
         </div>
       ) : (
         <button
