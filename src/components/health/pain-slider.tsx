@@ -160,7 +160,7 @@ export function PainSlider({ value, onChange }: PainSliderProps) {
 
       {/* Custom thumb styling via <style> tag */}
       <style>{`
-        input[type="range"]#${CSS.escape(id)}::-webkit-slider-thumb {
+        input[type="range"]#${id.replace(/:/g, '\\:')}::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           width: 28px;
@@ -172,7 +172,7 @@ export function PainSlider({ value, onChange }: PainSliderProps) {
           cursor: pointer;
           transition: background 0.2s ease;
         }
-        input[type="range"]#${CSS.escape(id)}::-moz-range-thumb {
+        input[type="range"]#${id.replace(/:/g, '\\:')}::-moz-range-thumb {
           width: 28px;
           height: 28px;
           border-radius: 50%;
@@ -182,7 +182,7 @@ export function PainSlider({ value, onChange }: PainSliderProps) {
           cursor: pointer;
           transition: background 0.2s ease;
         }
-        input[type="range"]#${CSS.escape(id)}::-moz-range-track {
+        input[type="range"]#${id.replace(/:/g, '\\:')}::-moz-range-track {
           height: 8px;
           border-radius: 9999px;
           background: linear-gradient(to right, var(--color-success) 0%, var(--color-warning) 50%, var(--color-error) 100%);
