@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { fraunces, dmSans } from "@/lib/fonts";
+import StorageInit from "@/components/storage-init";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${fraunces.variable} ${dmSans.variable}`}>
       <body className="font-body bg-bg text-text antialiased">
+        <StorageInit />
         {children}
       </body>
     </html>
