@@ -190,14 +190,26 @@ export function useNotifications() {
     }
   }, [notificationsEnabled, notificationCategories, pushNotification])
 
-  // ─── Interval: check every 60s ─────────────────────────────────────
+  // ─── Interval: check every 60s + visibilitychange ──────────────────
 
   useEffect(() => {
     // Initial check
     checkReminders()
 
     const interval = setInterval(checkReminders, 60_000)
-    return () => clearInterval(interval)
+
+    // Re-check when user returns to the app (tab/PWA comes back to foreground)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkReminders()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [checkReminders])
 
   // ─── Reset shown set at midnight ───────────────────────────────────

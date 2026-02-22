@@ -1,9 +1,37 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { ArrowDown, Play, Pause, Timer } from '@phosphor-icons/react'
+
+const LS_KEY = 'hanging-tracker'
+
+interface HangingState {
+  isTracking: boolean
+  startedAt: number // Date.now() when tracking started
+  date: string // YYYY-MM-DD — reset if day changed
+}
+
+function loadHangingState(): HangingState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function saveHangingState(state: HangingState | null) {
+  if (typeof window === 'undefined') return
+  if (!state) {
+    localStorage.removeItem(LS_KEY)
+  } else {
+    localStorage.setItem(LS_KEY, JSON.stringify(state))
+  }
+}
 
 export function HangingTracker() {
   const today = new Date().toISOString().split('T')[0]
@@ -14,19 +42,62 @@ export function HangingTracker() {
     [today]
   )
 
-  const [isTracking, setIsTracking] = useState(false)
-  const [currentMinutes, setCurrentMinutes] = useState(0)
-  const startTimeRef = useRef<number>(0)
+  // Restore state from localStorage on mount
+  const [isTracking, setIsTracking] = useState(() => {
+    const saved = loadHangingState()
+    // Only restore if same day
+    return saved?.isTracking === true && saved.date === today
+  })
+  const [startedAt] = useState(() => {
+    const saved = loadHangingState()
+    if (saved?.isTracking && saved.date === today) return saved.startedAt
+    return 0
+  })
+  const [currentMinutes, setCurrentMinutes] = useState(() => {
+    const saved = loadHangingState()
+    if (saved?.isTracking && saved.date === today) {
+      return Math.floor((Date.now() - saved.startedAt) / 60000)
+    }
+    return 0
+  })
+  const [trackingStartedAt, setTrackingStartedAt] = useState(startedAt)
 
-  // Timer tick
+  // Timer tick — recalculate from wall clock
   useEffect(() => {
-    if (!isTracking) return
-    startTimeRef.current = Date.now()
-    const interval = setInterval(() => {
-      setCurrentMinutes(Math.floor((Date.now() - startTimeRef.current) / 60000))
-    }, 30000) // update every 30 sec
+    if (!isTracking || !trackingStartedAt) return
+    const tick = () => {
+      setCurrentMinutes(Math.floor((Date.now() - trackingStartedAt) / 60000))
+    }
+    tick() // immediate
+    const interval = setInterval(tick, 15000) // update every 15 sec
     return () => clearInterval(interval)
-  }, [isTracking])
+  }, [isTracking, trackingStartedAt])
+
+  // Auto-save to DB every 5 minutes while tracking (crash protection)
+  useEffect(() => {
+    if (!isTracking || !trackingStartedAt) return
+    const interval = setInterval(async () => {
+      const addedMinutes = Math.floor((Date.now() - trackingStartedAt) / 60000)
+      const savedH = dailyLog?.hangingHours ?? 0
+      const newTotal = savedH + addedMinutes / 60
+      if (dailyLog) {
+        await db.dailyLogs.update(dailyLog.id!, { hangingHours: Math.round(newTotal * 10) / 10 })
+      } else {
+        await db.dailyLogs.add({
+          date: today,
+          hangingHours: Math.round((addedMinutes / 60) * 10) / 10,
+          fineMotor: [],
+          sessionsCompleted: 0,
+        })
+      }
+      // Reset tracking anchor after saving (so we don't double-count)
+      const newStart = Date.now()
+      setTrackingStartedAt(newStart)
+      setCurrentMinutes(0)
+      saveHangingState({ isTracking: true, startedAt: newStart, date: today })
+    }, 300000) // every 5 min
+    return () => clearInterval(interval)
+  }, [isTracking, trackingStartedAt, dailyLog, today])
 
   const savedHours = dailyLog?.hangingHours ?? 0
   const totalMinutes = Math.round(savedHours * 60) + currentMinutes
@@ -35,8 +106,8 @@ export function HangingTracker() {
 
   const handleToggle = useCallback(async () => {
     if (isTracking) {
-      // Stop tracking — save accumulated time
-      const addedMinutes = Math.floor((Date.now() - startTimeRef.current) / 60000)
+      // Stop tracking — save accumulated time to DB
+      const addedMinutes = Math.floor((Date.now() - trackingStartedAt) / 60000)
       const newTotal = savedHours + addedMinutes / 60
 
       if (dailyLog) {
@@ -51,10 +122,14 @@ export function HangingTracker() {
       }
       setCurrentMinutes(0)
       setIsTracking(false)
+      saveHangingState(null) // clear persisted state
     } else {
+      const now = Date.now()
+      setTrackingStartedAt(now)
       setIsTracking(true)
+      saveHangingState({ isTracking: true, startedAt: now, date: today })
     }
-  }, [isTracking, savedHours, dailyLog, today])
+  }, [isTracking, trackingStartedAt, savedHours, dailyLog, today])
 
   return (
     <div style={{

@@ -1,7 +1,9 @@
 'use client'
 
-import { Bell, BellSlash, Barbell, Pill, Moon, Ruler } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { Bell, BellSlash, Barbell, Pill, Moon, Ruler, WarningCircle } from '@phosphor-icons/react'
 import { useAppStore } from '@/stores/app-store'
+import { requestNotificationPermission, canNotify } from '@/lib/notifications'
 
 const CATEGORIES: Array<{
   key: 'sessions' | 'supplements' | 'sleep' | 'rom'
@@ -68,6 +70,27 @@ export function NotificationSettings() {
   const categories = useAppStore((s) => s.notificationCategories)
   const setEnabled = useAppStore((s) => s.setNotificationsEnabled)
   const toggleCategory = useAppStore((s) => s.toggleNotificationCategory)
+  const [permissionDenied, setPermissionDenied] = useState(false)
+
+  const handleMasterToggle = async () => {
+    if (!enabled) {
+      // Turning ON — request browser permission first
+      const granted = await requestNotificationPermission()
+      if (granted) {
+        setEnabled(true)
+        setPermissionDenied(false)
+      } else {
+        // Permission denied or unavailable
+        setPermissionDenied(true)
+        // Still enable in-app notifications (they work without permission)
+        setEnabled(true)
+      }
+    } else {
+      setEnabled(false)
+    }
+  }
+
+  const browserPermissionOk = canNotify()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -108,16 +131,56 @@ export function NotificationSettings() {
                 marginTop: '2px',
               }}
             >
-              {enabled ? 'Включены' : 'Выключены'}
+              {enabled ? (browserPermissionOk ? 'Включены' : 'Только в приложении') : 'Выключены'}
             </p>
           </div>
         </div>
         <Toggle
           checked={enabled}
-          onChange={() => setEnabled(!enabled)}
+          onChange={handleMasterToggle}
           ariaLabel="Включить уведомления"
         />
       </div>
+
+      {/* Permission warning */}
+      {enabled && (permissionDenied || !browserPermissionOk) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '8px',
+            padding: '12px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)',
+          }}
+        >
+          <WarningCircle size={18} weight="duotone" style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: '1px' }} />
+          <div>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
+              Браузер не разрешил push-уведомления. Напоминания будут работать только когда приложение открыто.
+            </p>
+            <button
+              onClick={async () => {
+                const granted = await requestNotificationPermission()
+                if (granted) setPermissionDenied(false)
+              }}
+              style={{
+                marginTop: '8px',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                color: 'var(--color-primary)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              Запросить разрешение повторно
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Category toggles */}
       {enabled && (
