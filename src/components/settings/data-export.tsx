@@ -6,12 +6,16 @@ import {
   exportROMData,
   exportPainData,
   exportSessionData,
+  exportSleepData,
+  exportSupplementData,
+  exportDailyLogData,
   exportAllData,
+  exportAllDataJSON,
   shareData,
   downloadFile,
 } from '@/lib/export'
 
-type ExportType = 'rom' | 'pain' | 'sessions' | 'all'
+type ExportType = 'rom' | 'pain' | 'sessions' | 'sleep' | 'supplements' | 'daily' | 'all' | 'json'
 type ExportStatus = 'idle' | 'loading' | 'done' | 'error'
 
 const EXPORT_ITEMS: Array<{
@@ -22,23 +26,37 @@ const EXPORT_ITEMS: Array<{
   { type: 'rom', label: 'ROM измерения', filename: 'rom-data.csv' },
   { type: 'pain', label: 'Записи боли', filename: 'pain-data.csv' },
   { type: 'sessions', label: 'Сессии упражнений', filename: 'sessions-data.csv' },
-  { type: 'all', label: 'Все данные', filename: 'elbow-recovery-all.csv' },
+  { type: 'sleep', label: 'Протокол сна', filename: 'sleep-data.csv' },
+  { type: 'supplements', label: 'Добавки', filename: 'supplements-data.csv' },
+  { type: 'daily', label: 'Дневник', filename: 'daily-log.csv' },
+  { type: 'all', label: 'Все данные (CSV)', filename: 'elbow-recovery-all.csv' },
+  { type: 'json', label: 'Полный бэкап (JSON)', filename: 'elbow-recovery-backup.json' },
 ]
 
 const exporters: Record<ExportType, () => Promise<string>> = {
   rom: exportROMData,
   pain: exportPainData,
   sessions: exportSessionData,
+  sleep: exportSleepData,
+  supplements: exportSupplementData,
+  daily: exportDailyLogData,
   all: exportAllData,
+  json: exportAllDataJSON,
+}
+
+const initialStatuses: Record<ExportType, ExportStatus> = {
+  rom: 'idle',
+  pain: 'idle',
+  sessions: 'idle',
+  sleep: 'idle',
+  supplements: 'idle',
+  daily: 'idle',
+  all: 'idle',
+  json: 'idle',
 }
 
 export function DataExport() {
-  const [statuses, setStatuses] = useState<Record<ExportType, ExportStatus>>({
-    rom: 'idle',
-    pain: 'idle',
-    sessions: 'idle',
-    all: 'idle',
-  })
+  const [statuses, setStatuses] = useState<Record<ExportType, ExportStatus>>(initialStatuses)
 
   const canShare = typeof navigator !== 'undefined' && !!navigator.share
 
@@ -47,7 +65,9 @@ export function DataExport() {
       setStatuses((prev) => ({ ...prev, [type]: 'loading' }))
       try {
         const content = await exporters[type]()
-        if (useShare) {
+        if (type === 'json') {
+          downloadFile(content, filename, 'application/json')
+        } else if (useShare) {
           await shareData(content, filename)
         } else {
           downloadFile(content, filename)
@@ -70,7 +90,7 @@ export function DataExport() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {EXPORT_ITEMS.map(({ type, label, filename }) => {
         const status = statuses[type]
-        const isLast = type === 'all'
+        const isHighlighted = type === 'all' || type === 'json'
         return (
           <div
             key={type}
@@ -80,10 +100,10 @@ export function DataExport() {
               justifyContent: 'space-between',
               padding: '14px 16px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: isLast
+              backgroundColor: isHighlighted
                 ? 'var(--color-primary-light)'
                 : 'var(--color-surface-alt)',
-              border: isLast
+              border: isHighlighted
                 ? '1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)'
                 : 'none',
             }}
@@ -92,7 +112,7 @@ export function DataExport() {
               <p
                 style={{
                   fontSize: 'var(--text-sm)',
-                  fontWeight: isLast ? 600 : 500,
+                  fontWeight: isHighlighted ? 600 : 500,
                   color: 'var(--color-text)',
                 }}
               >
@@ -126,7 +146,7 @@ export function DataExport() {
               )}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              {canShare && (
+              {canShare && type !== 'json' && (
                 <button
                   type="button"
                   aria-label={`Поделиться ${label}`}

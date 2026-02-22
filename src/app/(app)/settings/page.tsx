@@ -5,6 +5,7 @@ import { patient, getDaysSinceSurgery } from '@/data/patient'
 import { ThemeToggle } from '@/components/settings/theme-toggle'
 import { NotificationSettings } from '@/components/settings/notification-settings'
 import { DataExport } from '@/components/settings/data-export'
+import { DataImport } from '@/components/settings/data-import'
 import { StorageInfo } from '@/components/settings/storage-info'
 
 function SectionCard({
@@ -133,6 +134,11 @@ export default function SettingsPage() {
       {/* Data Export */}
       <SectionCard title="Экспорт данных">
         <DataExport />
+      </SectionCard>
+
+      {/* Data Import */}
+      <SectionCard title="Импорт данных">
+        <DataImport />
       </SectionCard>
 
       {/* Storage */}

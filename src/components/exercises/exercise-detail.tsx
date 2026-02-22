@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Exercise } from '@/data/exercises'
 import { ExerciseSVG } from './exercise-svg'
-import { Warning, CaretDown, CheckCircle, XCircle, Target, Timer, Repeat } from '@phosphor-icons/react'
+import { Warning, CaretDown, CheckCircle, XCircle, Target, Timer, Repeat, Play } from '@phosphor-icons/react'
+import { db } from '@/lib/db'
 
 interface ExerciseDetailProps {
   exercise: Exercise
@@ -41,12 +42,32 @@ export function ExerciseDetail({ exercise, defaultExpanded = false, completedTod
   const [expanded, setExpanded] = useState(defaultExpanded)
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number>(0)
+  const [justCompleted, setJustCompleted] = useState(false)
 
   useEffect(() => {
     if (contentRef.current) {
       setContentHeight(contentRef.current.scrollHeight)
     }
   }, [expanded])
+
+  const handleComplete = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (justCompleted) return
+
+    const now = new Date()
+    await db.exerciseSessions.add({
+      exerciseId: exercise.id,
+      sessionSlot: 0,
+      date: now.toISOString().split('T')[0],
+      startedAt: now.toISOString(),
+      completedAt: now.toISOString(),
+      completedSets: exercise.sets ?? 1,
+      completedReps: exercise.reps ?? 0,
+    })
+
+    setJustCompleted(true)
+    setTimeout(() => setJustCompleted(false), 2000)
+  }, [exercise.id, exercise.sets, exercise.reps, justCompleted])
 
   const priority = PRIORITY_CONFIG[exercise.priority] || PRIORITY_CONFIG[3]
   const targetLabel = TARGET_LABELS[exercise.target] || exercise.target
@@ -262,7 +283,9 @@ export function ExerciseDetail({ exercise, defaultExpanded = false, completedTod
                 }}
               >
                 <Timer size={16} weight="duotone" style={{ color: 'var(--color-primary)' }} />
-                Удержание {Math.floor(exercise.holdDurationSec / 60)} мин
+                Удержание {exercise.holdDurationSec >= 60
+                  ? `${Math.floor(exercise.holdDurationSec / 60)} мин`
+                  : `${exercise.holdDurationSec} сек`}
               </div>
             )}
             <div
@@ -430,6 +453,60 @@ export function ExerciseDetail({ exercise, defaultExpanded = false, completedTod
             </div>
           )}
         </div>
+      </div>
+
+      {/* Complete button — always visible */}
+      <div style={{ padding: '0 16px 16px 16px' }}>
+        <button
+          onClick={handleComplete}
+          disabled={justCompleted}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            border: justCompleted
+              ? '1.5px solid var(--color-primary)'
+              : completedToday
+                ? '1.5px solid var(--color-border)'
+                : '1.5px solid var(--color-primary)',
+            backgroundColor: justCompleted
+              ? 'var(--color-primary-light)'
+              : completedToday
+                ? 'var(--color-surface)'
+                : 'var(--color-primary)',
+            color: justCompleted
+              ? 'var(--color-primary)'
+              : completedToday
+                ? 'var(--color-text-secondary)'
+                : '#ffffff',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 600,
+            cursor: justCompleted ? 'default' : 'pointer',
+            transition: 'all 0.2s ease',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {justCompleted ? (
+            <>
+              <CheckCircle size={18} weight="fill" />
+              Выполнено ✓
+            </>
+          ) : completedToday ? (
+            <>
+              <Play size={18} weight="fill" />
+              Выполнить ещё раз
+            </>
+          ) : (
+            <>
+              <Play size={18} weight="fill" />
+              Выполнить
+            </>
+          )}
+        </button>
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Clock } from '@phosphor-icons/react'
+import { ArrowLeft, Clock, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { PainForm } from '@/components/health/pain-form'
@@ -16,6 +17,34 @@ const LOCATION_LABELS: Record<string, string> = {
   wrist: 'Запястье',
 }
 
+const CHARACTER_LABELS: Record<string, string> = {
+  sharp: 'Острая',
+  dull: 'Тупая',
+  aching: 'Ноющая',
+  pulling: 'Тянущая',
+  burning: 'Жгучая',
+  throbbing: 'Пульсирующая',
+  shooting: 'Стреляющая',
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  exercise: 'Упражнения',
+  rest: 'Покой',
+  cold: 'Холод',
+  heat: 'Тепло',
+  touch: 'Прикосновение',
+  load: 'Нагрузка',
+  morning: 'Утро',
+  evening: 'Вечер',
+}
+
+const CREPITATION_LABELS: Record<string, string> = {
+  none: 'Нет',
+  mild: 'Лёгкая',
+  moderate: 'Умеренная',
+  severe: 'Сильная',
+}
+
 function getPainLevelColor(level: number): string {
   if (level === 0) return 'var(--color-success)'
   if (level <= 3) return '#7BAF96'
@@ -27,6 +56,7 @@ function getPainLevelColor(level: number): string {
 // ─── Page ───────────────────────────────────────────────────────
 
 export default function PainDiaryPage() {
+  const [expandedEntryId, setExpandedEntryId] = useState<number | null>(null)
   const today = new Date().toISOString().split('T')[0]
 
   const todayEntries = useLiveQuery(
@@ -112,110 +142,312 @@ export default function PainDiaryPage() {
               gap: '8px',
             }}
           >
-            {todayEntries.map((entry) => (
-              <div
-                key={entry.id}
-                style={{
-                  padding: '16px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  animation: 'var(--animate-fade-in)',
-                }}
-              >
-                {/* Top row: time + pain level */}
+            {todayEntries.map((entry) => {
+              const isExpanded = expandedEntryId === entry.id
+              return (
                 <div
+                  key={entry.id}
+                  onClick={() =>
+                    setExpandedEntryId(isExpanded ? null : entry.id ?? null)
+                  }
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    animation: 'var(--animate-fade-in)',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'box-shadow 0.2s ease',
+                    boxShadow: isExpanded ? 'var(--shadow-sm)' : 'none',
                   }}
                 >
+                  {/* Top row: time + pain level + chevron */}
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
                     }}
                   >
-                    <Clock
-                      size={14}
-                      weight="duotone"
-                      style={{ color: 'var(--color-text-muted)' }}
-                    />
-                    <span
+                    <div
                       style={{
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
                     >
-                      {entry.time}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: '32px',
-                      height: '32px',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: `color-mix(in srgb, ${getPainLevelColor(entry.level)} 15%, transparent)`,
-                      color: getPainLevelColor(entry.level),
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 700,
-                      padding: '0 8px',
-                    }}
-                  >
-                    {entry.level}
-                  </div>
-                </div>
-
-                {/* Location chips */}
-                {entry.locations.length > 0 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '6px',
-                    }}
-                  >
-                    {entry.locations.map((loc) => (
+                      <Clock
+                        size={14}
+                        weight="duotone"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      />
                       <span
-                        key={loc}
                         style={{
-                          padding: '4px 10px',
-                          borderRadius: 'var(--radius-full)',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 500,
-                          backgroundColor: 'var(--color-surface-alt)',
+                          fontSize: 'var(--text-sm)',
                           color: 'var(--color-text-secondary)',
                         }}
                       >
-                        {LOCATION_LABELS[loc] || loc}
+                        {entry.time}
                       </span>
-                    ))}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '32px',
+                          height: '32px',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: `color-mix(in srgb, ${getPainLevelColor(entry.level)} 15%, transparent)`,
+                          color: getPainLevelColor(entry.level),
+                          fontSize: 'var(--text-base)',
+                          fontWeight: 700,
+                          padding: '0 8px',
+                        }}
+                      >
+                        {entry.level}
+                      </div>
+                      {isExpanded ? (
+                        <CaretUp
+                          size={16}
+                          weight="bold"
+                          style={{ color: 'var(--color-text-muted)' }}
+                        />
+                      ) : (
+                        <CaretDown
+                          size={16}
+                          weight="bold"
+                          style={{ color: 'var(--color-text-muted)' }}
+                        />
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* Notes preview */}
-                {entry.notes && (
-                  <p
+                  {/* Location chips */}
+                  {entry.locations.length > 0 && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                      }}
+                    >
+                      {entry.locations.map((loc) => (
+                        <span
+                          key={loc}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 'var(--radius-full)',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            backgroundColor: 'var(--color-surface-alt)',
+                            color: 'var(--color-text-secondary)',
+                          }}
+                        >
+                          {LOCATION_LABELS[loc] || loc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Collapsed: truncated notes */}
+                  {!isExpanded && entry.notes && (
+                    <p
+                      style={{
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--color-text-muted)',
+                        marginTop: '8px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {entry.notes}
+                    </p>
+                  )}
+
+                  {/* Expanded details */}
+                  <div
                     style={{
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--color-text-muted)',
-                      marginTop: '8px',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      maxHeight: isExpanded ? '500px' : '0px',
+                      opacity: isExpanded ? 1 : 0,
+                      transition:
+                        'max-height 0.3s ease, opacity 0.2s ease, margin-top 0.3s ease',
+                      marginTop: isExpanded ? '12px' : '0px',
                     }}
                   >
-                    {entry.notes}
-                  </p>
-                )}
-              </div>
-            ))}
+                    {/* Separator */}
+                    <div
+                      style={{
+                        height: '1px',
+                        backgroundColor: 'var(--color-border)',
+                        marginBottom: '12px',
+                      }}
+                    />
+
+                    {/* Character chips */}
+                    {entry.character.length > 0 && (
+                      <div style={{ marginBottom: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 600,
+                            color: 'var(--color-text-secondary)',
+                          }}
+                        >
+                          Характер:{' '}
+                        </span>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            flexWrap: 'wrap',
+                            gap: '4px',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {entry.character.map((ch) => (
+                            <span
+                              key={ch}
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: 'var(--text-xs)',
+                                fontWeight: 500,
+                                backgroundColor: `color-mix(in srgb, var(--color-primary) 10%, transparent)`,
+                                color: 'var(--color-primary)',
+                              }}
+                            >
+                              {CHARACTER_LABELS[ch] || ch}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Trigger chips */}
+                    {entry.triggers.length > 0 && (
+                      <div style={{ marginBottom: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 600,
+                            color: 'var(--color-text-secondary)',
+                          }}
+                        >
+                          Триггеры:{' '}
+                        </span>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            flexWrap: 'wrap',
+                            gap: '4px',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {entry.triggers.map((tr) => (
+                            <span
+                              key={tr}
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: 'var(--text-xs)',
+                                fontWeight: 500,
+                                backgroundColor: `color-mix(in srgb, var(--color-warning) 12%, transparent)`,
+                                color: 'var(--color-warning)',
+                              }}
+                            >
+                              {TRIGGER_LABELS[tr] || tr}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Crepitation */}
+                    <div style={{ marginBottom: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          fontWeight: 600,
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        Крепитация:{' '}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          color: 'var(--color-text-muted)',
+                        }}
+                      >
+                        {CREPITATION_LABELS[entry.crepitation] ||
+                          entry.crepitation}
+                      </span>
+                    </div>
+
+                    {/* Numbness 4-5 */}
+                    <div style={{ marginBottom: entry.notes ? '10px' : '0px' }}>
+                      <span
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          fontWeight: 600,
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        Онемение 4-5 пальцев:{' '}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          color: entry.numbness45
+                            ? 'var(--color-error)'
+                            : 'var(--color-text-muted)',
+                          fontWeight: entry.numbness45 ? 600 : 400,
+                        }}
+                      >
+                        {entry.numbness45 ? 'Да' : 'Нет'}
+                      </span>
+                    </div>
+
+                    {/* Full notes */}
+                    {entry.notes && (
+                      <div>
+                        <span
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 600,
+                            color: 'var(--color-text-secondary)',
+                          }}
+                        >
+                          Заметки:
+                        </span>
+                        <p
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--color-text-muted)',
+                            marginTop: '4px',
+                            lineHeight: 1.5,
+                            whiteSpace: 'pre-wrap',
+                          }}
+                        >
+                          {entry.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
