@@ -38,6 +38,121 @@ const TARGET_LABELS: Record<string, string> = {
   hand_function: 'Кисть',
 }
 
+function BookStackTracker() {
+  const [bookCount, setBookCount] = useState(() => {
+    if (typeof window === 'undefined') return 2
+    return parseInt(localStorage.getItem('book-stack-count') ?? '2', 10)
+  })
+  const [lastProgressed, setLastProgressed] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('book-stack-last-progressed') ?? ''
+  })
+
+  const updateCount = (delta: number) => {
+    const newCount = Math.max(1, Math.min(15, bookCount + delta))
+    setBookCount(newCount)
+    localStorage.setItem('book-stack-count', String(newCount))
+    if (delta > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      setLastProgressed(today)
+      localStorage.setItem('book-stack-last-progressed', today)
+    }
+  }
+
+  const estimatedAngle = Math.round(bookCount * 5 + 15) // rough estimate: 15° base + 5° per book
+  const heightCm = (bookCount * 2.5).toFixed(1)
+
+  // Days since last progression
+  const daysSinceProgress = lastProgressed
+    ? Math.floor((Date.now() - new Date(lastProgressed).getTime()) / 86400000)
+    : null
+
+  return (
+    <div style={{
+      padding: '12px',
+      borderRadius: 'var(--radius-md)',
+      backgroundColor: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+      border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
+      marginTop: '12px',
+    }}>
+      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, margin: 0, color: 'var(--color-text)' }}>
+        Прогрессия книжек
+      </p>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginTop: '8px',
+      }}>
+        <button
+          onClick={() => updateCount(-1)}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-text)',
+          }}
+        >
+          &minus;
+        </button>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{
+            fontSize: 'var(--text-2xl, 24px)',
+            fontWeight: 700,
+            fontFamily: 'var(--font-display)',
+            margin: 0,
+            color: 'var(--color-text)',
+          }}>
+            {bookCount}
+          </p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+            ~{heightCm} см · ~{estimatedAngle}&deg;
+          </p>
+        </div>
+        <button
+          onClick={() => updateCount(1)}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            backgroundColor: 'var(--color-primary)',
+            border: 'none',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+          }}
+        >
+          +
+        </button>
+      </div>
+      {daysSinceProgress !== null && daysSinceProgress >= 3 && (
+        <p style={{
+          fontSize: 'var(--text-xs)',
+          color: 'var(--color-warning)',
+          fontWeight: 500,
+          marginTop: '8px',
+          textAlign: 'center',
+          margin: '8px 0 0 0',
+        }}>
+          {daysSinceProgress} дн. без прогрессии. Попробуй +1 книжку?
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function ExerciseDetail({ exercise, defaultExpanded = false, completedToday = false }: ExerciseDetailProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -354,6 +469,9 @@ export function ExerciseDetail({ exercise, defaultExpanded = false, completedTod
               ))}
             </ol>
           </div>
+
+          {/* Book stack tracker for ex_table_books */}
+          {exercise.id === 'ex_table_books' && <BookStackTracker />}
 
           {/* Pain rules */}
           <div

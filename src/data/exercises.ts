@@ -34,6 +34,8 @@ export interface Exercise {
   goodFeeling: string
   badFeeling?: string
   availablePhases: number[]
+  phasePriority?: Record<number, 'required' | 'recommended' | 'optional'>
+  progressionRules?: { fromPhase: number; change: string }[]
 }
 
 export const exercises: Exercise[] = [
@@ -78,6 +80,7 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Острая боль сзади локтя (олекранон), онемение пальцев, щелчки в суставе.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'required', 2: 'required', 3: 'recommended', 4: 'optional', 5: 'optional' },
   },
 
   // ───── 2. Гравитационное сгибание ЛЁЖА ─────
@@ -117,6 +120,7 @@ export const exercises: Exercise[] = [
       'Приятная тяжесть в предплечье, постепенное проваливание руки глубже в сгибание.',
     badFeeling: 'Онемение пальцев, пульсирующая боль, спазм мышц.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'required', 2: 'required', 3: 'recommended', 4: 'optional', 5: 'optional' },
   },
 
   // ───── 3. Скольжение по стене ─────
@@ -158,6 +162,7 @@ export const exercises: Exercise[] = [
       'Плавное скольжение, ощущение работы мышц без перегрузки сустава.',
     badFeeling: 'Заклинивание в суставе, невозможность контролировать движение.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'recommended', 2: 'required', 3: 'recommended', 4: 'optional', 5: 'optional' },
   },
 
   // ───── 4. Самопомощь с полотенцем ─────
@@ -200,6 +205,7 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Рывки, невозможность контролировать скорость, острая боль в локте.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'recommended', 2: 'required', 3: 'recommended', 4: 'optional', 5: 'optional' },
   },
 
   // ───── 5. Стол + книжки (прогрессивное растяжение) ─────
@@ -240,6 +246,11 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Жжение в области шва/пластины, покалывание в пальцах, спазм.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'recommended', 2: 'required', 3: 'required', 4: 'recommended', 5: 'optional' },
+    progressionRules: [
+      { fromPhase: 2, change: '+1 книжка каждые 2-3 дня' },
+      { fromPhase: 3, change: 'Добавить лёгкое утяжеление (0.5 кг)' },
+    ],
   },
 
   // ───── 6. Свободное свисание (разгибание) ─────
@@ -264,6 +275,7 @@ export const exercises: Exercise[] = [
     goodFeeling:
       'Ощущение тяжести и лёгкого растяжения. Рука постепенно выпрямляется.',
     availablePhases: [1, 2, 3, 4, 5],
+    phasePriority: { 1: 'required', 2: 'required', 3: 'required', 4: 'recommended', 5: 'optional' },
   },
 
   // ───── 7. Пронация / Супинация ─────
@@ -294,6 +306,7 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Хруст, щелчки, боль при повороте ладони вверх — сигнал остановиться.',
     availablePhases: [2, 3, 4, 5],
+    phasePriority: { 2: 'required', 3: 'required', 4: 'recommended', 5: 'optional' },
   },
 
   // ───── 8. Разработка запястья ─────
@@ -346,6 +359,7 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Боль, отдающая в локоть — значит запястье компенсирует за локтевой сустав. Уменьшить амплитуду.',
     availablePhases: [2, 3, 4, 5],
+    phasePriority: { 2: 'recommended', 3: 'required', 4: 'recommended', 5: 'optional' },
   },
 
   // ───── 9. Мелкая моторика ─────
@@ -402,6 +416,7 @@ export const exercises: Exercise[] = [
     badFeeling:
       'Дрожание руки, быстрая усталость кисти, боль в предплечье.',
     availablePhases: [2, 3, 4, 5],
+    phasePriority: { 2: 'optional', 3: 'recommended', 4: 'required', 5: 'recommended' },
   },
 ]
 
@@ -415,4 +430,16 @@ export function getExercisesForPhase(phase: number): Exercise[] {
 
 export function getExercisesByPriority(priority: 1 | 2 | 3): Exercise[] {
   return exercises.filter((ex) => ex.priority === priority)
+}
+
+export function getExercisePriorityForPhase(exerciseId: string, phase: number): 'required' | 'recommended' | 'optional' | null {
+  const exercise = getExerciseById(exerciseId)
+  if (!exercise) return null
+  if (!exercise.phasePriority) {
+    // Fallback to static priority
+    if (exercise.priority === 1) return 'required'
+    if (exercise.priority === 2) return 'recommended'
+    return 'optional'
+  }
+  return exercise.phasePriority[phase] ?? null
 }

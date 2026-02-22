@@ -11,29 +11,49 @@ export interface ScenarioPoint {
 // Key data points for each scenario
 const optimisticKeys: ScenarioPoint[] = [
   { week: 0, arc: 0 },
-  { week: 6, arc: 30 },
-  { week: 12, arc: 90 },
-  { week: 20, arc: 115 },
-  { week: 32, arc: 130 },
-  { week: 52, arc: 140 },
+  { week: 2, arc: 10 },
+  { week: 4, arc: 20 },
+  { week: 6, arc: 35 },
+  { week: 8, arc: 55 },
+  { week: 10, arc: 70 },
+  { week: 12, arc: 85 },
+  { week: 16, arc: 100 },
+  { week: 20, arc: 110 },
+  { week: 26, arc: 120 },
+  { week: 32, arc: 125 },
+  { week: 52, arc: 130 },
 ]
 
 const averageKeys: ScenarioPoint[] = [
   { week: 0, arc: 0 },
-  { week: 6, arc: 20 },
-  { week: 12, arc: 70 },
-  { week: 20, arc: 95 },
-  { week: 32, arc: 110 },
-  { week: 52, arc: 125 },
+  { week: 2, arc: 5 },
+  { week: 4, arc: 15 },
+  { week: 6, arc: 25 },
+  { week: 8, arc: 35 },
+  { week: 10, arc: 45 },
+  { week: 12, arc: 55 },
+  { week: 16, arc: 70 },
+  { week: 20, arc: 80 },
+  { week: 26, arc: 90 },
+  { week: 32, arc: 95 },
+  { week: 40, arc: 100 },
+  { week: 52, arc: 105 },
 ]
 
 const conservativeKeys: ScenarioPoint[] = [
   { week: 0, arc: 0 },
-  { week: 6, arc: 10 },
-  { week: 12, arc: 50 },
-  { week: 20, arc: 75 },
-  { week: 32, arc: 90 },
-  { week: 52, arc: 105 },
+  { week: 2, arc: 5 },
+  { week: 4, arc: 10 },
+  { week: 6, arc: 15 },
+  { week: 8, arc: 25 },
+  { week: 10, arc: 30 },
+  { week: 12, arc: 35 },
+  { week: 16, arc: 45 },
+  { week: 20, arc: 55 },
+  { week: 26, arc: 60 },
+  { week: 32, arc: 70 },
+  { week: 40, arc: 85 },
+  { week: 52, arc: 90 },
 ]
 
 /**
@@ -85,3 +105,18 @@ function interpolate(keys: ScenarioPoint[]): ScenarioPoint[] {
 export const optimisticCurve: ScenarioPoint[] = interpolate(optimisticKeys)
 export const averageCurve: ScenarioPoint[] = interpolate(averageKeys)
 export const conservativeCurve: ScenarioPoint[] = interpolate(conservativeKeys)
+
+export interface FunctionalMilestone {
+  arc: number
+  label: string
+}
+
+export const functionalMilestones: FunctionalMilestone[] = [
+  { arc: 30, label: 'Клавиатура' },
+  { arc: 50, label: 'Руль авто' },
+  { arc: 60, label: 'Вилка/ложка' },
+  { arc: 80, label: 'Расчёска' },
+  { arc: 100, label: 'Функц. минимум' },
+  { arc: 120, label: 'Телефон к уху' },
+  { arc: 140, label: 'Полная норма' },
+]

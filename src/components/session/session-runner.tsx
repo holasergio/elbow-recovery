@@ -13,7 +13,8 @@ import {
   clearSessionState,
   type ActiveSessionState,
 } from '@/lib/session-store'
-import { CheckCircle, ArrowRight, Pause, Play } from '@phosphor-icons/react'
+import { CheckCircle, ArrowRight, Pause, Play, WarningCircle } from '@phosphor-icons/react'
+import { playSound } from '@/lib/audio'
 
 interface SessionRunnerProps {
   sessionId: number
@@ -36,6 +37,8 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
   const [currentStep, setCurrentStep] = useState(() => restored?.currentStep ?? 0)
   const [isComplete, setIsComplete] = useState(false)
   const [startTime] = useState(() => restored?.startTime ?? new Date().toISOString())
+  const [skipWarning, setSkipWarning] = useState<{ type: 'warmup' | 'cooldown'; message: string } | null>(null)
+  const [painDialog, setPainDialog] = useState(false)
 
   // Track timer elapsed for current step — updated by TimerDisplay via callback
   const timerElapsedRef = useRef<number>(restored?.timerElapsedSeconds ?? 0)
@@ -133,31 +136,55 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
   const totalSteps = session.steps.length
   const isLastStep = currentStep === totalSteps - 1
 
+  const isThermotherapyStep = (stepIndex: number) => {
+    const s = session.steps[stepIndex]
+    return !s.exerciseId && (
+      s.label.includes('компресс') ||
+      s.label.includes('Тёплый') ||
+      s.label.includes('Холодный') ||
+      s.label.includes('Расслабление')
+    )
+  }
+
+  const handleCompleteSession = async () => {
+    // Save individual exercise completions to DB
+    const today = new Date().toISOString().split('T')[0]
+    const completedAt = new Date().toISOString()
+    const exerciseSteps = session.steps.filter(s => s.exerciseId)
+
+    for (const step of exerciseSteps) {
+      await db.exerciseSessions.add({
+        exerciseId: step.exerciseId!,
+        sessionSlot: sessionId,
+        date: today,
+        startedAt: startTime,
+        completedAt,
+        completedSets: step.sets ?? 1,
+        completedReps: step.reps ?? 0,
+      })
+    }
+
+    // Clear persisted state — session is done
+    clearSessionState(sessionId)
+    playSound('sessionComplete')
+    setIsComplete(true)
+  }
+
   const handleNextStep = async () => {
     if (isLastStep) {
-      // Save individual exercise completions to DB
-      const today = new Date().toISOString().split('T')[0]
-      const completedAt = new Date().toISOString()
-      const exerciseSteps = session.steps.filter(s => s.exerciseId)
-
-      for (const step of exerciseSteps) {
-        await db.exerciseSessions.add({
-          exerciseId: step.exerciseId!,
-          sessionSlot: sessionId,
-          date: today,
-          startedAt: startTime,
-          completedAt,
-          completedSets: step.sets ?? 1,
-          completedReps: step.reps ?? 0,
-        })
-      }
-
-      // Clear persisted state — session is done
-      clearSessionState(sessionId)
-      setIsComplete(true)
+      await handleCompleteSession()
     } else {
       setCurrentStep(prev => prev + 1)
     }
+  }
+
+  const handleStepTimerComplete = () => {
+    // Check if this is a passive flexion hold step
+    if (step?.exerciseId === 'ex_passive_flexion' && step?.sets) {
+      setPainDialog(true)
+      return
+    }
+    handleNextStep()
   }
 
   if (isComplete) {
@@ -292,7 +319,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
             seconds={step.durationMin * 60}
             initialElapsed={stepTimerInitialElapsed}
             autoStart={currentStep === (restored?.currentStep ?? -1) && (restored?.isTimerRunning ?? false)}
-            onComplete={handleNextStep}
+            onComplete={handleStepTimerComplete}
             onStateChange={handleTimerStateChange}
           />
         )}
@@ -371,11 +398,196 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         )}
       </div>
 
+      {/* Skip Warning Modal */}
+      {skipWarning && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 100,
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-xl)',
+            padding: '24px',
+            maxWidth: '320px',
+            width: '100%',
+            textAlign: 'center',
+          }}>
+            <WarningCircle size={48} weight="duotone" style={{ color: 'var(--color-warning)' }} />
+            <h3 style={{
+              marginTop: '12px',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 600,
+            }}>
+              Не пропускай термотерапию
+            </h3>
+            <p style={{
+              marginTop: '8px',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.6,
+            }}>
+              {skipWarning.message}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+              <button
+                onClick={() => setSkipWarning(null)}
+                style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Продолжить процедуру
+              </button>
+              <button
+                onClick={() => {
+                  setSkipWarning(null)
+                  if (isLastStep) {
+                    handleCompleteSession()
+                  } else {
+                    setCurrentStep(prev => prev + 1)
+                  }
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-text-muted)',
+                  border: '1px solid var(--color-border)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontSize: 'var(--text-sm)',
+                }}
+              >
+                Пропустить всё равно
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 30-Second Pain Rule Dialog */}
+      {painDialog && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 100,
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-xl)',
+            padding: '24px',
+            maxWidth: '320px',
+            width: '100%',
+          }}>
+            <h3 style={{
+              fontSize: 'var(--text-lg)',
+              fontWeight: 600,
+              textAlign: 'center',
+              marginBottom: '4px',
+            }}>
+              Правило 30 секунд
+            </h3>
+            <p style={{
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              textAlign: 'center',
+              marginBottom: '16px',
+            }}>
+              Боль ушла за время удержания?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  setPainDialog(false)
+                  handleNextStep()
+                }}
+                style={{
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                Да, ушла — продвигаюсь дальше
+              </button>
+              <button
+                onClick={() => {
+                  setPainDialog(false)
+                  handleNextStep()
+                }}
+                style={{
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
+                  color: 'var(--color-text)',
+                  border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                Нет, осталась — возвращаюсь
+              </button>
+              <button
+                onClick={() => {
+                  setPainDialog(false)
+                  clearSessionState(sessionId)
+                  setIsComplete(true)
+                }}
+                style={{
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)',
+                  color: 'var(--color-error)',
+                  border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                Острая боль — СТОП
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom CTA — always visible, always in thumb zone */}
       {!step.durationMin && (
         <div style={{ padding: '16px 0' }}>
           <button
-            onClick={handleNextStep}
+            onClick={() => {
+              if (isThermotherapyStep(currentStep)) {
+                const label = step.label
+                const isWarmup = label.includes('Тёплый') || (label.includes('компресс') && !label.includes('Холодный'))
+                const message = isWarmup
+                  ? 'Тепло увеличивает эластичность капсулы на 15-20%. Без него растяжение менее эффективно и рискованнее.'
+                  : 'Холод снимает воспаление после растяжения. Без него отёк может снизить амплитуду на следующей сессии.'
+                setSkipWarning({ type: isWarmup ? 'warmup' : 'cooldown', message })
+                return
+              }
+              handleNextStep()
+            }}
             style={{
               width: '100%',
               padding: '16px 0',

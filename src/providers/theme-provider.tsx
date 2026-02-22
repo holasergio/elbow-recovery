@@ -29,5 +29,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
+  // Auto-force dark after 21:00 for melatonin protection
+  useEffect(() => {
+    const checkEveningMode = () => {
+      const hour = new Date().getHours()
+      const isEvening = hour >= 21 || hour < 7
+      if (isEvening && theme === 'system') {
+        document.documentElement.classList.remove('light')
+        document.documentElement.classList.add('dark')
+      }
+    }
+    checkEveningMode()
+    const interval = setInterval(checkEveningMode, 60000) // check every minute
+    return () => clearInterval(interval)
+  }, [theme])
+
   return <>{children}</>
 }
