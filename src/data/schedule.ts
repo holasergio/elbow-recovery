@@ -1,5 +1,6 @@
 // ──────────────────────────────────────────────
 // schedule.ts — 5 ежедневных сессий реабилитации
+// Протокол PDF: Phase 1-2 (~7 недель после ORIF)
 // ──────────────────────────────────────────────
 
 export interface SessionStep {
@@ -20,8 +21,17 @@ export interface DailySession {
   steps: SessionStep[]
 }
 
+/** Протокол тепла: ПЕРЕД сессией */
+export const warmProtocol =
+  '10-15 мин теплое полотенце или ванночка 37-38\u00B0C. Капсула эластичнее на 15-20%.'
+
+/** Протокол холода: ПОСЛЕ сессии */
+export const coldProtocol =
+  '10 мин лёд через полотенце. Снимает воспаление от растяжения.'
+
 export const dailySessions: DailySession[] = [
   // ───── Сессия 1: Утренняя полная (07:00) ─────
+  // Тепло → Упр.1 → Упр.2 → Упр.3 → Холод
   {
     id: 1,
     time: '07:00',
@@ -31,51 +41,39 @@ export const dailySessions: DailySession[] = [
     steps: [
       {
         label: 'Тёплый компресс',
-        durationMin: 5,
-        note: 'Тёплое полотенце или грелка на локоть. Разогрев тканей перед упражнениями.',
+        durationMin: 12,
+        note: warmProtocol,
       },
       {
         exerciseId: 'ex_passive_flexion',
-        label: 'Пассивное сгибание',
+        label: 'Упр.1 — Пассивное сгибание здоровой рукой',
         sets: 3,
         reps: 10,
         durationMin: 8,
       },
       {
         exerciseId: 'ex_gravity_flexion',
-        label: 'Гравитационное сгибание',
+        label: 'Упр.2 — Гравитационное сгибание лёжа',
         durationMin: 10,
-        note: 'Удержание 5–10 минут',
+        note: 'Лёжа на спине, локоть в потолок, предплечье свисает за голову. 5-10 мин.',
       },
       {
         exerciseId: 'ex_wall_slide',
-        label: 'Скольжение по стене',
+        label: 'Упр.3 — Скольжение по стене',
         sets: 1,
         reps: 10,
         durationMin: 5,
       },
       {
-        exerciseId: 'ex_rotation',
-        label: 'Пронация/Супинация',
-        sets: 2,
-        reps: 15,
-        durationMin: 5,
-      },
-      {
-        exerciseId: 'ex_gravity_extension',
-        label: 'Маятник (свободное свисание)',
-        durationMin: 3,
-        note: 'Расслабленное свисание руки, лёгкие покачивания',
-      },
-      {
         label: 'Холодный компресс',
-        durationMin: 4,
-        note: 'Лёд через полотенце на локоть. Уменьшение отёка после нагрузки.',
+        durationMin: 10,
+        note: coldProtocol,
       },
     ],
   },
 
   // ───── Сессия 2: Дневная короткая (12:00) ─────
+  // Упр.3 (стена) + Упр.1 (2 подхода)
   {
     id: 2,
     time: '12:00',
@@ -85,28 +83,23 @@ export const dailySessions: DailySession[] = [
     steps: [
       {
         exerciseId: 'ex_wall_slide',
-        label: 'Скольжение по стене',
+        label: 'Упр.3 — Скольжение по стене',
         sets: 1,
         reps: 10,
         durationMin: 5,
       },
       {
         exerciseId: 'ex_passive_flexion',
-        label: 'Пассивное сгибание',
+        label: 'Упр.1 — Пассивное сгибание (2 подхода)',
         sets: 2,
         reps: 10,
         durationMin: 6,
-      },
-      {
-        exerciseId: 'ex_gravity_extension',
-        label: 'Маятник (свободное свисание)',
-        durationMin: 4,
-        note: 'Расслабленное свисание, покачивания',
       },
     ],
   },
 
   // ───── Сессия 3: Дневная полная (15:00) ─────
+  // Тепло → Упр.1 → Упр.2 → Упр.4 → Упр.5 → Холод
   {
     id: 3,
     time: '15:00',
@@ -116,50 +109,45 @@ export const dailySessions: DailySession[] = [
     steps: [
       {
         label: 'Тёплый компресс',
-        durationMin: 5,
-        note: 'Тёплое полотенце или грелка на локоть.',
+        durationMin: 12,
+        note: warmProtocol,
       },
       {
         exerciseId: 'ex_passive_flexion',
-        label: 'Пассивное сгибание',
+        label: 'Упр.1 — Пассивное сгибание здоровой рукой',
         sets: 3,
         reps: 10,
         durationMin: 8,
       },
       {
         exerciseId: 'ex_gravity_flexion',
-        label: 'Гравитационное сгибание',
+        label: 'Упр.2 — Гравитационное сгибание лёжа',
         durationMin: 10,
-        note: 'Удержание 5–10 минут',
+        note: 'Лёжа на спине, локоть в потолок, предплечье свисает за голову. 5-10 мин.',
       },
       {
         exerciseId: 'ex_towel_assist',
-        label: 'Ассистированное сгибание полотенцем',
+        label: 'Упр.4 — Самопомощь с полотенцем',
         sets: 1,
         reps: 10,
         durationMin: 4,
       },
       {
         exerciseId: 'ex_table_books',
-        label: 'Статическое разгибание (книжки)',
+        label: 'Упр.5 — Стол + книжки',
         durationMin: 5,
-        note: 'Удержание 5 минут с книжками под запястьем',
-      },
-      {
-        exerciseId: 'ex_wrist_rehab',
-        label: 'Разработка запястья',
-        durationMin: 4,
-        note: 'Все 5 движений по 10 повторений',
+        note: 'Удержание 5-10 мин. +1 книжка каждые 2-3 дня.',
       },
       {
         label: 'Холодный компресс',
-        durationMin: 4,
-        note: 'Лёд через полотенце на локоть.',
+        durationMin: 10,
+        note: coldProtocol,
       },
     ],
   },
 
   // ───── Сессия 4: Вечерняя короткая (18:00) ─────
+  // ТОЛЬКО Упр.2 (гравитация лёжа) 10 мин
   {
     id: 4,
     time: '18:00',
@@ -169,50 +157,34 @@ export const dailySessions: DailySession[] = [
     steps: [
       {
         exerciseId: 'ex_gravity_flexion',
-        label: 'Гравитационное сгибание',
-        durationMin: 8,
-        note: 'Удержание 5–8 минут',
-      },
-      {
-        exerciseId: 'ex_table_books',
-        label: 'Статическое разгибание (книжки)',
-        durationMin: 7,
-        note: 'Удержание 5–7 минут',
+        label: 'Упр.2 — Гравитационное сгибание лёжа',
+        durationMin: 10,
+        note: 'Лёжа на спине, локоть в потолок, предплечье свисает за голову. 10 мин.',
       },
     ],
   },
 
-  // ───── Сессия 5: Вечерняя лёгкая (21:30) ─────
+  // ───── Сессия 5: Вечерняя мягкая (21:30) ─────
+  // Тепло → Упр.1 мягко → Сон до 23:00!
   {
     id: 5,
     time: '21:30',
     type: 'light',
-    name: 'Вечерняя лёгкая',
-    durationMin: 20,
+    name: 'Вечерняя мягкая',
+    durationMin: 30,
     steps: [
       {
         label: 'Тёплый компресс',
-        durationMin: 5,
-        note: 'Расслабление тканей перед сном.',
+        durationMin: 12,
+        note: warmProtocol,
       },
       {
         exerciseId: 'ex_passive_flexion',
-        label: 'Пассивное сгибание (мягко)',
+        label: 'Упр.1 — Пассивное сгибание (мягко)',
         sets: 2,
         reps: 10,
         durationMin: 6,
-        note: 'Работать мягче, чем в дневных сессиях. Фокус на расслаблении.',
-      },
-      {
-        exerciseId: 'ex_gravity_extension',
-        label: 'Маятник (свободное свисание)',
-        durationMin: 5,
-        note: 'Максимально расслабленное свисание, лёгкие покачивания перед сном.',
-      },
-      {
-        label: 'Самомассаж предплечья',
-        durationMin: 4,
-        note: 'Мягкий массаж мышц предплечья для снятия напряжения за день.',
+        note: 'Работать мягче, чем в дневных сессиях. Сон до 23:00!',
       },
     ],
   },

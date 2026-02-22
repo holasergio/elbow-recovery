@@ -2,11 +2,19 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-export function useTimer(targetSeconds: number) {
+export function useTimer(targetSeconds: number, initialElapsed: number = 0) {
   const [isRunning, setIsRunning] = useState(false)
-  const [remaining, setRemaining] = useState(targetSeconds)
+  const [remaining, setRemaining] = useState(Math.max(0, targetSeconds - initialElapsed))
   const startTimeRef = useRef<number>(0)
-  const elapsedBeforePauseRef = useRef<number>(0)
+  const elapsedBeforePauseRef = useRef<number>(initialElapsed)
+
+  // Expose total elapsed seconds for persistence
+  const getElapsed = useCallback(() => {
+    if (isRunning) {
+      return elapsedBeforePauseRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000)
+    }
+    return elapsedBeforePauseRef.current
+  }, [isRunning])
 
   const start = useCallback(() => {
     startTimeRef.current = Date.now()
@@ -38,7 +46,7 @@ export function useTimer(targetSeconds: number) {
     return () => clearInterval(interval)
   }, [isRunning, targetSeconds])
 
-  return { remaining, isRunning, start, pause, reset, isComplete: remaining === 0 }
+  return { remaining, isRunning, start, pause, reset, isComplete: remaining === 0, getElapsed }
 }
 
 function playCompletionSound() {

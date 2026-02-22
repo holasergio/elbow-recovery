@@ -1,9 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Barbell, Timer, Repeat, Fire, ArrowRight } from '@phosphor-icons/react'
+import { Barbell, Timer, Repeat, Fire, ArrowRight, PlayCircle } from '@phosphor-icons/react'
 import { getCurrentPhase } from '@/data/patient'
 import { getExercisesForPhase, type Exercise } from '@/data/exercises'
+import { getActiveSession, loadSessionState } from '@/lib/session-store'
+import { dailySessions } from '@/data/schedule'
 
 const TYPE_LABELS: Record<string, string> = {
   passive: 'Пассивные',
@@ -90,6 +93,64 @@ function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }
   )
 }
 
+function ResumeBanner() {
+  const [activeInfo, setActiveInfo] = useState<{
+    sessionId: number
+    sessionName: string
+    currentStep: number
+    totalSteps: number
+  } | null>(null)
+
+  useEffect(() => {
+    const active = getActiveSession()
+    if (!active) return
+    const session = dailySessions.find(s => s.id === active.sessionId)
+    if (!session) return
+    const state = loadSessionState(active.sessionId)
+    if (!state) return
+    setActiveInfo({
+      sessionId: active.sessionId,
+      sessionName: session.name,
+      currentStep: state.currentStep,
+      totalSteps: session.steps.length,
+    })
+  }, [])
+
+  if (!activeInfo) return null
+
+  return (
+    <Link
+      href={`/session/${activeInfo.sessionId}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '14px 16px',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--color-primary)',
+        color: 'white',
+        textDecoration: 'none',
+        marginBottom: '20px',
+      }}
+    >
+      <PlayCircle size={28} weight="fill" style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontWeight: 600, fontSize: 'var(--text-base)', margin: 0 }}>
+          Продолжить сессию
+        </p>
+        <p style={{
+          fontSize: 'var(--text-xs)',
+          margin: '2px 0 0 0',
+          opacity: 0.85,
+        }}>
+          {activeInfo.sessionName} — шаг {activeInfo.currentStep + 1} из {activeInfo.totalSteps}
+        </p>
+      </div>
+      <ArrowRight size={18} weight="bold" style={{ flexShrink: 0 }} />
+    </Link>
+  )
+}
+
 export default function SessionPage() {
   const phase = getCurrentPhase()
   const exercises = getExercisesForPhase(phase)
@@ -105,6 +166,9 @@ export default function SessionPage() {
 
   return (
     <div style={{ paddingTop: '24px', paddingBottom: '24px' }}>
+      {/* Resume active session banner */}
+      <ResumeBanner />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
         <Barbell size={28} weight="duotone" style={{ color: 'var(--color-primary)' }} />

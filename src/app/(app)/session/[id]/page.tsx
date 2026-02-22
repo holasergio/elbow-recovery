@@ -11,6 +11,5 @@ export default function SessionDetailPage() {
     return <div className="py-6"><p>Сессия не найдена</p></div>
   }
 
-  // key forces full remount when sessionId changes or page is revisited
-  return <SessionRunner key={`session-${sessionId}-${Date.now()}`} sessionId={sessionId} />
+  return <SessionRunner key={`session-${sessionId}`} sessionId={sessionId} />
 }

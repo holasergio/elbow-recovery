@@ -16,25 +16,42 @@ function PassiveFlexion({ size }: { size: number }) {
       <style>{`
         @keyframes pf-bend {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-45deg); }
+          33% { transform: rotate(-20deg); }
+          66% { transform: rotate(-45deg); }
         }
-        .pf-forearm { transform-origin: 60px 65px; animation: pf-bend 3s ease-in-out infinite; }
+        .pf-forearm { transform-origin: 62px 62px; animation: pf-bend 4s ease-in-out infinite; }
       `}</style>
-      {/* Table surface */}
-      <rect x="10" y="75" width="100" height="6" rx="2" fill={MUTED} opacity="0.3" />
-      {/* Upper arm (fixed on table) */}
-      <line x1="20" y1="65" x2="60" y2="65" stroke={SKIN} strokeWidth="8" strokeLinecap="round" />
-      {/* Elbow joint */}
-      <circle cx="60" cy="65" r="5" fill={PRIMARY} opacity="0.6" />
-      {/* Forearm (animates bending) */}
+      {/* Seated figure - side view */}
+      {/* Chair/seat */}
+      <rect x="12" y="70" width="30" height="4" rx="2" fill={MUTED} opacity="0.25" />
+      <rect x="12" y="35" width="4" height="39" rx="2" fill={MUTED} opacity="0.2" />
+      {/* Legs (thigh horizontal on seat) */}
+      <line x1="30" y1="74" x2="48" y2="74" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.4" />
+      <line x1="48" y1="74" x2="50" y2="92" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.4" />
+      {/* Body (seated torso) */}
+      <line x1="30" y1="40" x2="30" y2="72" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.5" />
+      {/* Head */}
+      <circle cx="30" cy="33" r="7" fill={SKIN} opacity="0.5" />
+      {/* Upper arm resting on thigh - elbow at knee */}
+      <line x1="35" y1="50" x2="48" y2="68" stroke={SKIN} strokeWidth="6" strokeLinecap="round" />
+      {/* Elbow joint on thigh */}
+      <circle cx="48" cy="68" r="4" fill={PRIMARY} opacity="0.6" />
+      {/* Forearm being pulled (animates bending toward shoulder) */}
       <g className="pf-forearm">
-        <line x1="60" y1="65" x2="100" y2="65" stroke={SKIN} strokeWidth="7" strokeLinecap="round" />
-        {/* Hand */}
-        <circle cx="100" cy="65" r="4" fill={SKIN} />
+        {/* Forearm */}
+        <line x1="62" y1="62" x2="90" y2="62" stroke={SKIN} strokeWidth="5.5" strokeLinecap="round" />
+        {/* Hand/wrist */}
+        <circle cx="90" cy="62" r="3.5" fill={SKIN} />
+        {/* Healthy hand gripping wrist (different opacity) */}
+        <ellipse cx="87" cy="62" rx="5" ry="4" fill={SKIN} opacity="0.45" stroke={PRIMARY} strokeWidth="0.8" />
       </g>
-      {/* Bend arrow */}
-      <path d="M85 45 C75 35 65 40 60 50" stroke={PRIMARY} strokeWidth="1.5" fill="none" strokeDasharray="3 2" opacity="0.7" />
-      <polygon points="60,50 63,44 57,46" fill={PRIMARY} opacity="0.7" />
+      {/* Arrow showing pull direction toward shoulder */}
+      <path d="M82 48 C75 38 65 42 58 50" stroke={PRIMARY} strokeWidth="1.5" fill="none" strokeDasharray="3 2" opacity="0.7" />
+      <polygon points="58,50 61,44 55,46" fill={PRIMARY} opacity="0.7" />
+      {/* Phase labels */}
+      <text x="95" y="58" fontSize="7" fill={PRIMARY} fontFamily="system-ui" opacity="0.5">A</text>
+      <text x="82" y="42" fontSize="7" fill={PRIMARY} fontFamily="system-ui" opacity="0.5">B</text>
+      <text x="62" y="38" fontSize="7" fill={PRIMARY} fontFamily="system-ui" opacity="0.5">C</text>
       {/* Label */}
       <text x="60" y="108" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Сгибание</text>
     </svg>
@@ -47,34 +64,44 @@ function GravityFlexion({ size }: { size: number }) {
       <style>{`
         @keyframes gf-swing {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(8deg); }
+          50% { transform: rotate(25deg); }
         }
-        .gf-arm { transform-origin: 50px 35px; animation: gf-swing 4s ease-in-out infinite; }
+        .gf-forearm { transform-origin: 52px 28px; animation: gf-swing 3.5s ease-in-out infinite; }
       `}</style>
-      {/* Chair back */}
-      <rect x="20" y="25" width="6" height="65" rx="2" fill={MUTED} opacity="0.25" />
-      <rect x="20" y="65" width="40" height="5" rx="2" fill={MUTED} opacity="0.25" />
-      {/* Body (seated torso) */}
-      <line x1="40" y1="25" x2="40" y2="65" stroke={SKIN} strokeWidth="6" strokeLinecap="round" opacity="0.6" />
-      {/* Head */}
-      <circle cx="40" cy="18" r="8" fill={SKIN} opacity="0.6" />
-      {/* Shoulder */}
-      <circle cx="50" cy="35" r="4" fill={PRIMARY} opacity="0.4" />
-      {/* Arm hangs down, swings */}
-      <g className="gf-arm">
-        {/* Upper arm */}
-        <line x1="50" y1="35" x2="50" y2="60" stroke={SKIN} strokeWidth="6" strokeLinecap="round" />
-        {/* Elbow */}
-        <circle cx="50" cy="60" r="4" fill={PRIMARY} opacity="0.6" />
-        {/* Forearm */}
-        <line x1="50" y1="60" x2="50" y2="90" stroke={SKIN} strokeWidth="5" strokeLinecap="round" />
+      {/* Bed/surface */}
+      <rect x="5" y="80" width="110" height="6" rx="2" fill={MUTED} opacity="0.3" />
+      <rect x="8" y="86" width="4" height="8" rx="1" fill={MUTED} opacity="0.2" />
+      <rect x="104" y="86" width="4" height="8" rx="1" fill={MUTED} opacity="0.2" />
+      {/* Pillow */}
+      <rect x="72" y="72" width="28" height="8" rx="4" fill={MUTED} opacity="0.15" />
+      {/* Body lying on back (horizontal) */}
+      <line x1="38" y1="76" x2="90" y2="76" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.5" />
+      {/* Head on pillow */}
+      <circle cx="93" cy="73" r="7" fill={SKIN} opacity="0.5" />
+      {/* Legs */}
+      <line x1="38" y1="76" x2="18" y2="76" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" opacity="0.4" />
+      <line x1="18" y1="76" x2="12" y2="80" stroke={SKIN} strokeWidth="3.5" strokeLinecap="round" opacity="0.35" />
+      {/* Shoulder joint */}
+      <circle cx="75" cy="72" r="3" fill={PRIMARY} opacity="0.4" />
+      {/* Upper arm pointing STRAIGHT UP (vertical) */}
+      <line x1="75" y1="72" x2="52" y2="28" stroke={SKIN} strokeWidth="6" strokeLinecap="round" />
+      {/* Elbow joint */}
+      <circle cx="52" cy="28" r="4" fill={PRIMARY} opacity="0.6" />
+      {/* Forearm hanging behind head due to gravity (animated swing) */}
+      <g className="gf-forearm">
+        <line x1="52" y1="28" x2="52" y2="58" stroke={SKIN} strokeWidth="5" strokeLinecap="round" />
         {/* Hand */}
-        <circle cx="50" cy="93" r="3.5" fill={SKIN} />
+        <circle cx="52" cy="61" r="3.5" fill={SKIN} />
+        {/* Optional weight */}
+        <rect x="47" y="63" width="10" height="5" rx="1.5" fill={ACCENT} opacity="0.5" />
+        <text x="52" y="67" textAnchor="middle" fontSize="5" fill="white" fontFamily="system-ui" opacity="0.8">0.5</text>
       </g>
       {/* Gravity arrow */}
-      <line x1="70" y1="50" x2="70" y2="85" stroke={ACCENT} strokeWidth="1.5" strokeDasharray="4 2" />
-      <polygon points="70,88 67,82 73,82" fill={ACCENT} />
-      <text x="78" y="70" fontSize="8" fill={ACCENT} fontFamily="system-ui">g</text>
+      <line x1="38" y1="32" x2="38" y2="56" stroke={ACCENT} strokeWidth="1.5" strokeDasharray="4 2" />
+      <polygon points="38,59 35,53 41,53" fill={ACCENT} />
+      <text x="33" y="48" fontSize="7" fill={ACCENT} fontFamily="system-ui">g</text>
+      {/* Hint label */}
+      <text x="52" y="16" textAnchor="middle" fontSize="6.5" fill={PRIMARY} fontFamily="system-ui" opacity="0.7">Локоть в потолок</text>
       {/* Label */}
       <text x="60" y="108" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Гравитация</text>
     </svg>
@@ -85,36 +112,43 @@ function WallSlide({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <style>{`
-        @keyframes ws-slide {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-25px); }
+        @keyframes ws-lean {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(6px); }
         }
-        .ws-hand { animation: ws-slide 3s ease-in-out infinite; }
+        .ws-body { animation: ws-lean 3s ease-in-out infinite; }
       `}</style>
       {/* Wall */}
-      <rect x="80" y="5" width="6" height="100" rx="1" fill={MUTED} opacity="0.3" />
+      <rect x="90" y="5" width="6" height="95" rx="1" fill={MUTED} opacity="0.3" />
       {/* Floor */}
-      <rect x="10" y="98" width="100" height="3" rx="1" fill={MUTED} opacity="0.2" />
-      {/* Figure - legs */}
-      <line x1="50" y1="95" x2="45" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
-      <line x1="50" y1="95" x2="55" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
-      {/* Body */}
-      <line x1="50" y1="55" x2="50" y2="95" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.6" />
-      {/* Head */}
-      <circle cx="50" cy="48" r="7" fill={SKIN} opacity="0.6" />
-      {/* Shoulder */}
-      <circle cx="55" cy="58" r="3" fill={PRIMARY} opacity="0.4" />
-      {/* Arm reaching to wall - hand slides */}
-      <g className="ws-hand">
-        <line x1="55" y1="58" x2="78" y2="55" stroke={SKIN} strokeWidth="5" strokeLinecap="round" />
-        {/* Hand on wall */}
-        <circle cx="80" cy="55" r="4" fill={PRIMARY} opacity="0.5" />
+      <rect x="10" y="98" width="86" height="3" rx="1" fill={MUTED} opacity="0.2" />
+      {/* Figure facing wall */}
+      <g className="ws-body">
+        {/* Legs */}
+        <line x1="52" y1="95" x2="47" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+        <line x1="52" y1="95" x2="57" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+        {/* Body */}
+        <line x1="52" y1="55" x2="52" y2="95" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.6" />
+        {/* Head */}
+        <circle cx="52" cy="48" r="7" fill={SKIN} opacity="0.6" />
+        {/* Shoulder */}
+        <circle cx="58" cy="58" r="3" fill={PRIMARY} opacity="0.4" />
+        {/* Arm reaching to wall */}
+        <line x1="58" y1="58" x2="88" y2="65" stroke={SKIN} strokeWidth="5" strokeLinecap="round" />
+        {/* Hand on wall - FINGERS POINTING DOWN */}
+        <rect x="84" y="64" width="6" height="14" rx="2" fill={PRIMARY} opacity="0.5" />
+        {/* Finger tips pointing down */}
+        <line x1="85" y1="78" x2="85" y2="83" stroke={SKIN} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="87" y1="78" x2="87" y2="84" stroke={SKIN} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="89" y1="78" x2="89" y2="83" stroke={SKIN} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       </g>
-      {/* Slide arrows */}
-      <line x1="90" y1="65" x2="90" y2="40" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
-      <polygon points="90,37 87,43 93,43" fill={PRIMARY} opacity="0.6" />
+      {/* Arrow showing body lean direction toward wall */}
+      <line x1="35" y1="72" x2="48" y2="72" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
+      <polygon points="50,72 44,69 44,75" fill={PRIMARY} opacity="0.6" />
+      <text x="28" y="68" fontSize="6" fill={PRIMARY} fontFamily="system-ui" opacity="0.6">корпус</text>
+      <text x="28" y="76" fontSize="6" fill={PRIMARY} fontFamily="system-ui" opacity="0.6">к стене</text>
       {/* Label */}
-      <text x="50" y="112" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Стена</text>
+      <text x="55" y="112" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Стена</text>
     </svg>
   )
 }
@@ -125,34 +159,38 @@ function TowelAssist({ size }: { size: number }) {
       <style>{`
         @keyframes ta-pull {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+          50% { transform: translateY(6px); }
         }
-        .ta-towel { animation: ta-pull 3s ease-in-out infinite; }
+        .ta-pull-arm { animation: ta-pull 3s ease-in-out infinite; }
       `}</style>
       {/* Body */}
-      <line x1="60" y1="45" x2="60" y2="90" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.6" />
+      <line x1="60" y1="30" x2="60" y2="85" stroke={SKIN} strokeWidth="5" strokeLinecap="round" opacity="0.6" />
       {/* Head */}
-      <circle cx="60" cy="38" r="7" fill={SKIN} opacity="0.6" />
+      <circle cx="60" cy="23" r="7" fill={SKIN} opacity="0.6" />
       {/* Legs */}
-      <line x1="60" y1="90" x2="52" y2="100" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
-      <line x1="60" y1="90" x2="68" y2="100" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
-      {/* Towel loop over neck */}
-      <g className="ta-towel">
-        <path d="M50 38 Q60 30 70 38" stroke={ACCENT} strokeWidth="2.5" fill="none" />
-        {/* Left side of towel (healthy hand pulls) */}
-        <line x1="50" y1="38" x2="42" y2="65" stroke={ACCENT} strokeWidth="2" />
-        {/* Right side of towel (injured arm being pulled) */}
-        <line x1="70" y1="38" x2="78" y2="60" stroke={ACCENT} strokeWidth="2" />
-        {/* Healthy arm (left) pulling towel */}
-        <line x1="55" y1="55" x2="42" y2="65" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" />
-        {/* Injured arm (right) being pulled up */}
-        <line x1="65" y1="55" x2="78" y2="60" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" />
-        <circle cx="42" cy="65" r="3" fill={SKIN} />
-        <circle cx="78" cy="60" r="3" fill={SKIN} />
+      <line x1="60" y1="85" x2="52" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+      <line x1="60" y1="85" x2="68" y2="98" stroke={SKIN} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+      {/* Shoulder marker (injured side - right) */}
+      <circle cx="68" cy="36" r="3" fill={PRIMARY} opacity="0.4" />
+      {/* Towel over injured shoulder */}
+      <path d="M72 32 Q74 28 72 36" stroke={ACCENT} strokeWidth="2.5" fill="none" />
+      {/* Front side of towel - injured arm holds */}
+      <line x1="72" y1="36" x2="78" y2="58" stroke={ACCENT} strokeWidth="2.5" />
+      {/* Back side of towel - goes behind and down */}
+      <line x1="72" y1="32" x2="48" y2="42" stroke={ACCENT} strokeWidth="2.5" />
+      <line x1="48" y1="42" x2="40" y2="70" stroke={ACCENT} strokeWidth="2.5" />
+      {/* Injured arm (right) - holds front of towel */}
+      <line x1="68" y1="36" x2="78" y2="55" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" />
+      <circle cx="78" cy="58" r="3" fill={SKIN} />
+      {/* Healthy arm (left) - goes behind back and pulls down */}
+      <g className="ta-pull-arm">
+        <line x1="52" y1="36" x2="45" y2="50" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" opacity="0.7" />
+        <line x1="45" y1="50" x2="40" y2="70" stroke={SKIN} strokeWidth="4.5" strokeLinecap="round" opacity="0.7" />
+        <circle cx="40" cy="70" r="3" fill={SKIN} opacity="0.7" />
       </g>
-      {/* Pull arrow */}
-      <line x1="35" y1="70" x2="35" y2="50" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
-      <polygon points="35,47 32,53 38,53" fill={PRIMARY} opacity="0.6" />
+      {/* Pull direction arrow - downward behind back */}
+      <line x1="30" y1="55" x2="30" y2="75" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
+      <polygon points="30,78 27,72 33,72" fill={PRIMARY} opacity="0.6" />
       {/* Label */}
       <text x="60" y="112" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Полотенце</text>
     </svg>
@@ -163,32 +201,44 @@ function TableBooks({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <style>{`
-        @keyframes tb-ext {
+        @keyframes tb-sag {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-3deg); }
+          50% { transform: rotate(2deg); }
         }
-        .tb-arm { transform-origin: 55px 58px; animation: tb-ext 4s ease-in-out infinite; }
+        .tb-elbow { transform-origin: 55px 55px; animation: tb-sag 4s ease-in-out infinite; }
       `}</style>
       {/* Table surface */}
-      <rect x="10" y="68" width="100" height="5" rx="2" fill={MUTED} opacity="0.3" />
-      {/* Books stack under wrist */}
-      <rect x="80" y="55" width="18" height="5" rx="1" fill={ACCENT} opacity="0.6" />
-      <rect x="82" y="50" width="16" height="5" rx="1" fill={ACCENT} opacity="0.4" />
-      <rect x="81" y="60" width="17" height="5" rx="1" fill={ACCENT} opacity="0.5" />
-      {/* Arm on table */}
-      <g className="tb-arm">
-        {/* Upper arm */}
-        <line x1="20" y1="60" x2="55" y2="58" stroke={SKIN} strokeWidth="7" strokeLinecap="round" />
-        {/* Elbow area */}
-        <circle cx="55" cy="58" r="4" fill={PRIMARY} opacity="0.5" />
-        {/* Forearm (elevated at wrist by books) */}
-        <line x1="55" y1="58" x2="88" y2="50" stroke={SKIN} strokeWidth="6" strokeLinecap="round" />
-        {/* Hand palm up */}
-        <ellipse cx="92" cy="48" rx="5" ry="3.5" fill={SKIN} />
+      <rect x="8" y="68" width="104" height="5" rx="2" fill={MUTED} opacity="0.3" />
+      {/* Book stack under wrist - progressive stacking */}
+      {/* Week 1: 2 books */}
+      <rect x="82" y="60" width="20" height="4" rx="1" fill="#7BAFD4" opacity="0.55" />
+      <rect x="83" y="56" width="19" height="4" rx="1" fill="#D4A76A" opacity="0.55" />
+      {/* Week 2: +2 books */}
+      <rect x="81" y="52" width="21" height="4" rx="1" fill="#9BC4A8" opacity="0.5" />
+      <rect x="82" y="48" width="20" height="4" rx="1" fill="#D4837A" opacity="0.5" />
+      {/* Week 3: +2 books */}
+      <rect x="80" y="44" width="22" height="4" rx="1" fill="#B8A9D4" opacity="0.45" />
+      <rect x="81" y="40" width="21" height="4" rx="1" fill="#D4C97A" opacity="0.45" />
+      {/* Week labels */}
+      <text x="106" y="63" fontSize="5" fill={MUTED} fontFamily="system-ui" opacity="0.6">Нед.1</text>
+      <text x="106" y="53" fontSize="5" fill={MUTED} fontFamily="system-ui" opacity="0.6">Нед.2</text>
+      <text x="106" y="43" fontSize="5" fill={MUTED} fontFamily="system-ui" opacity="0.6">Нед.3</text>
+      {/* Arm on table with elbow sagging */}
+      <g className="tb-elbow">
+        {/* Upper arm on table */}
+        <line x1="18" y1="60" x2="55" y2="55" stroke={SKIN} strokeWidth="7" strokeLinecap="round" />
+        {/* Elbow */}
+        <circle cx="55" cy="55" r="4" fill={PRIMARY} opacity="0.5" />
+        {/* Forearm elevated by books */}
+        <line x1="55" y1="55" x2="88" y2="38" stroke={SKIN} strokeWidth="6" strokeLinecap="round" />
+        {/* Hand palm up on books */}
+        <ellipse cx="91" cy="36" rx="5" ry="3.5" fill={SKIN} />
       </g>
       {/* Gravity arrow on elbow */}
-      <line x1="55" y1="72" x2="55" y2="88" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
-      <polygon points="55,91 52,85 58,85" fill={PRIMARY} opacity="0.6" />
+      <line x1="55" y1="68" x2="55" y2="84" stroke={PRIMARY} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
+      <polygon points="55,87 52,81 58,81" fill={PRIMARY} opacity="0.6" />
+      {/* +book label */}
+      <text x="18" y="84" fontSize="7" fill={ACCENT} fontFamily="system-ui" opacity="0.7">+книжка</text>
       {/* Label */}
       <text x="60" y="108" textAnchor="middle" fontSize="9" fill={MUTED} fontFamily="system-ui">Книжки</text>
     </svg>

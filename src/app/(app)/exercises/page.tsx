@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react'
 import { exercises, getExercisesForPhase, Exercise } from '@/data/exercises'
 import { getCurrentPhase } from '@/data/patient'
 import { ExerciseDetail } from '@/components/exercises/exercise-detail'
-import { Barbell } from '@phosphor-icons/react'
+import { useTodayStats } from '@/hooks/use-exercise-stats'
+import { Barbell, CheckCircle } from '@phosphor-icons/react'
 
 type PriorityFilter = 'all' | 1 | 2 | 3
 
@@ -35,6 +36,9 @@ const PHASE_NAMES: Record<number, string> = {
 export default function ExercisesPage() {
   const phase = getCurrentPhase()
   const [activeFilter, setActiveFilter] = useState<PriorityFilter>('all')
+  const { exerciseIds: completedIds, uniqueExercises: completedCount, loading: statsLoading } = useTodayStats()
+
+  const completedSet = useMemo(() => new Set(completedIds), [completedIds])
 
   const phaseExercises = useMemo(() => getExercisesForPhase(phase), [phase])
 
@@ -80,6 +84,37 @@ export default function ExercisesPage() {
           {phaseExercises.length} упражнений
         </p>
       </div>
+
+      {/* Today's completion summary */}
+      {!statsLoading && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-lg)',
+            backgroundColor: completedCount > 0 ? 'var(--color-primary-light)' : 'var(--color-surface-alt)',
+            border: completedCount > 0 ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+            marginBottom: '16px',
+          }}
+        >
+          <CheckCircle
+            size={20}
+            weight={completedCount > 0 ? 'fill' : 'regular'}
+            style={{ color: completedCount > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)', flexShrink: 0 }}
+          />
+          <span
+            style={{
+              fontSize: 'var(--text-sm)',
+              fontWeight: 500,
+              color: completedCount > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)',
+            }}
+          >
+            Выполнено сегодня: {completedCount} из {phaseExercises.length}
+          </span>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div
@@ -166,7 +201,11 @@ export default function ExercisesPage() {
             {/* Exercise cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {group.exercises.map((exercise) => (
-                <ExerciseDetail key={exercise.id} exercise={exercise} />
+                <ExerciseDetail
+                  key={exercise.id}
+                  exercise={exercise}
+                  completedToday={completedSet.has(exercise.id)}
+                />
               ))}
             </div>
           </section>

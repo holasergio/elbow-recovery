@@ -8,6 +8,7 @@ import { Warning, CaretDown, CheckCircle, XCircle, Target, Timer, Repeat } from 
 interface ExerciseDetailProps {
   exercise: Exercise
   defaultExpanded?: boolean
+  completedToday?: boolean
 }
 
 const PRIORITY_CONFIG: Record<number, { label: string; bg: string; color: string }> = {
@@ -36,7 +37,7 @@ const TARGET_LABELS: Record<string, string> = {
   hand_function: 'Кисть',
 }
 
-export function ExerciseDetail({ exercise, defaultExpanded = false }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, defaultExpanded = false, completedToday = false }: ExerciseDetailProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number>(0)
@@ -53,14 +54,40 @@ export function ExerciseDetail({ exercise, defaultExpanded = false }: ExerciseDe
   return (
     <div
       style={{
+        position: 'relative',
         backgroundColor: 'var(--color-surface)',
         borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-border)',
+        border: completedToday
+          ? '1.5px solid var(--color-primary)'
+          : '1px solid var(--color-border)',
         overflow: 'hidden',
-        transition: 'box-shadow 0.2s ease',
+        transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
         boxShadow: expanded ? 'var(--shadow-md)' : 'var(--shadow-xs)',
       }}
     >
+      {/* Completed today badge */}
+      {completedToday && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '3px 8px',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: 'var(--color-primary-light)',
+            color: 'var(--color-primary)',
+            fontSize: '11px',
+            fontWeight: 600,
+          }}
+        >
+          <CheckCircle size={14} weight="fill" />
+          Сделано
+        </div>
+      )}
       {/* Tappable header */}
       <button
         onClick={() => setExpanded(!expanded)}
