@@ -108,7 +108,8 @@ interface CellData {
 export function StreakCalendar() {
   const colors = useCalendarColors()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const todayMarkerRef = useRef<HTMLDivElement>(null)
+  const todayMarkerRef = useRef<HTMLButtonElement>(null)
+  const [selectedCell, setSelectedCell] = useState<{ dateStr: string; count: number; hasRom: boolean } | null>(null)
 
   const currentYear = new Date().getFullYear()
   const today = new Date()
@@ -427,20 +428,29 @@ export function StreakCalendar() {
                       ? day.dateStr
                       : `${day.dateStr}: ${day.count} ${pluralSessions(day.count)}${showRomDot ? ' + замер ROM' : ''}`
 
+                    const isSelected = selectedCell?.dateStr === day.dateStr
+
                     return (
-                      <div
+                      <button
                         key={dIdx}
                         ref={todayCell ? todayMarkerRef : undefined}
-                        title={title}
+                        onClick={() => {
+                          if (future || !day.inYear) return
+                          setSelectedCell(prev =>
+                            prev?.dateStr === day.dateStr ? null : { dateStr: day.dateStr, count: day.count, hasRom: day.hasRom }
+                          )
+                        }}
                         style={{
                           position: 'relative',
                           width: `${cellSize}px`,
                           height: `${cellSize}px`,
                           borderRadius: '2px',
                           backgroundColor,
-                          border,
+                          border: isSelected ? '2px solid var(--color-primary)' : border,
                           transition: 'background-color 0.2s',
                           boxSizing: 'border-box',
+                          cursor: future || !day.inYear ? 'default' : 'pointer',
+                          padding: 0,
                         }}
                       >
                         {/* ROM measurement golden dot */}
@@ -457,7 +467,7 @@ export function StreakCalendar() {
                             }}
                           />
                         )}
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -466,6 +476,38 @@ export function StreakCalendar() {
           </div>
         </div>
       </div>
+
+      {/* Selected day info */}
+      {selectedCell && (
+        <div style={{
+          marginTop: 10,
+          padding: '8px 12px',
+          background: 'var(--color-surface-alt)',
+          borderRadius: 8,
+          fontSize: 12,
+          color: 'var(--color-text)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}>
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            {new Date(selectedCell.dateStr + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+          </span>
+          <span style={{ fontWeight: 600 }}>
+            {selectedCell.count > 0
+              ? `${selectedCell.count} ${pluralSessions(selectedCell.count)}`
+              : 'Нет сессий'}
+            {selectedCell.hasRom && ' · замер ROM'}
+          </span>
+          <button
+            onClick={() => setSelectedCell(null)}
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 0, fontSize: 14 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Legend */}
       <div

@@ -3,7 +3,7 @@
 // Version is stamped at build time by scripts/stamp-sw.mjs
 // ──────────────────────────────────────────────
 
-const APP_VERSION = '20260222025331'
+const APP_VERSION = '20260223171626'
 const CACHE_NAME = `elbow-recovery-${APP_VERSION}`
 
 const PRECACHE_ASSETS = [

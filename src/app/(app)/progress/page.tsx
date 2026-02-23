@@ -86,7 +86,7 @@ function DeficitInfo() {
 }
 
 export default function ProgressPage() {
-  const { latest } = useROMHistory()
+  const { latest, best } = useROMHistory()
   const phaseNum = getCurrentPhase()
   const phase = phases.find(p => p.number === phaseNum)
   const targetMin = phase?.romTarget.min ?? 0
@@ -158,6 +158,30 @@ export default function ProgressPage() {
             <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
               {latest.date}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Best measurement badge */}
+      {best && best !== latest && (
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          borderRadius: 12,
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Лучший замер</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>
+              {best.arc}°
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+              {best.date}
+            </span>
           </div>
         </div>
       )}

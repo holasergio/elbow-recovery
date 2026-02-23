@@ -606,25 +606,58 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
       )}
 
       {/* Bottom CTA — always visible, always in thumb zone */}
-      {!step.durationMin && (
-        <div style={{ padding: '16px 0', display: 'flex', gap: 10 }}>
-          {currentStep > 0 && (
-            <button
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              style={{
-                background: 'var(--color-surface)',
-                color: 'var(--color-text-muted)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 14,
-                padding: '14px 20px',
-                fontSize: 15,
-                cursor: 'pointer',
-                flexShrink: 0,
-              }}
-            >
-              ← Назад
-            </button>
-          )}
+      <div style={{ padding: '16px 0', display: 'flex', gap: 10 }}>
+        {currentStep > 0 && (
+          <button
+            onClick={() => setCurrentStep(prev => prev - 1)}
+            style={{
+              background: 'var(--color-surface)',
+              color: 'var(--color-text-muted)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 14,
+              padding: '14px 20px',
+              fontSize: 15,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            ← Назад
+          </button>
+        )}
+        {/* For timed steps: show skip button (timer can still run) */}
+        {step.durationMin ? (
+          <button
+            onClick={() => {
+              if (isThermotherapyStep(currentStep)) {
+                const label = step.label
+                const isWarmup = label.includes('Тёплый') || (label.includes('компресс') && !label.includes('Холодный'))
+                const message = isWarmup
+                  ? 'Тепло увеличивает эластичность капсулы на 15-20%. Без него растяжение менее эффективно и рискованнее.'
+                  : 'Холод снимает воспаление после растяжения. Без него отёк может снизить амплитуду на следующей сессии.'
+                setSkipWarning({ type: isWarmup ? 'warmup' : 'cooldown', message })
+                return
+              }
+              handleNextStep()
+            }}
+            style={{
+              flex: 1,
+              padding: '14px 0',
+              borderRadius: '12px',
+              fontWeight: 500,
+              color: 'var(--color-text-muted)',
+              fontSize: 'var(--text-base)',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            {isLastStep ? 'Завершить' : 'Пропустить шаг'} <ArrowRight size={18} />
+          </button>
+        ) : (
           <button
             onClick={() => {
               if (isThermotherapyStep(currentStep)) {
@@ -657,8 +690,8 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
             {isLastStep ? 'Завершить' : 'Далее'}
             <ArrowRight size={20} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

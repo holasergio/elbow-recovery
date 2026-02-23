@@ -5,6 +5,7 @@ import { Pill, ArrowLeft } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
+import { supplements } from '@/data/supplements'
 import { SupplementChecklist } from '@/components/health/supplement-checklist'
 import { MonthCalendar, type CalendarDay } from '@/components/health/month-calendar'
 
@@ -18,6 +19,12 @@ export default function SupplementsPage() {
 
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null)
   const allSupplementLogs = useLiveQuery(() => db.supplementLogs.orderBy('date').toArray(), []) ?? []
+
+  // Name lookup: sup_collagen → "Коллаген"
+  const suppNameMap = useMemo(
+    () => new Map(supplements.map(s => [s.id, s.name])),
+    []
+  )
 
   const supplementCalendarDays = useMemo((): CalendarDay[] => {
     const byDate = new Map<string, { taken: number; total: number }>()
@@ -130,7 +137,7 @@ export default function SupplementsPage() {
             }}>
               <span style={{ fontSize: 16 }}>{log.taken ? '✓' : '○'}</span>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 12, color: 'var(--color-text)', fontWeight: 500 }}>{log.supplementId}</p>
+                <p style={{ fontSize: 12, color: 'var(--color-text)', fontWeight: 500 }}>{suppNameMap.get(log.supplementId) ?? log.supplementId}</p>
                 <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{log.slot}{log.takenAt ? ' · ' + new Date(log.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
               </div>
             </div>

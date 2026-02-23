@@ -12,9 +12,14 @@ export function useROMHistory() {
     ? measurements[measurements.length - 1]
     : null
 
+  const best = measurements && measurements.length > 0
+    ? measurements.reduce((a, b) => a.arc >= b.arc ? a : b)
+    : null
+
   return {
     measurements: measurements ?? [],
     latest,
+    best,
     isLoading: measurements === undefined,
   }
 }
