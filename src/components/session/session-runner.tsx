@@ -15,6 +15,7 @@ import {
 } from '@/lib/session-store'
 import { CheckCircle, ArrowRight, Pause, Play, WarningCircle } from '@phosphor-icons/react'
 import { playSound } from '@/lib/audio'
+import { ExerciseSVG } from '@/components/exercises/exercise-svg'
 
 interface SessionRunnerProps {
   sessionId: number
@@ -294,6 +295,23 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         />
       </div>
 
+      {/* Step progress pills */}
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 20 }}>
+        {session.steps.map((_, idx) => (
+          <div
+            key={idx}
+            style={{
+              width: idx === currentStep ? 20 : 8,
+              height: 8,
+              borderRadius: 4,
+              background: idx <= currentStep ? 'var(--color-primary)' : 'var(--color-border)',
+              opacity: idx < currentStep ? 0.5 : 1,
+              transition: 'all 0.25s ease',
+            }}
+          />
+        ))}
+      </div>
+
       {/* Step content — centered */}
       <div style={{
         flex: 1,
@@ -311,6 +329,21 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         }}>
           {step.label}
         </h2>
+
+        {/* Exercise SVG illustration */}
+        {step.exerciseId && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            margin: '16px 0',
+            padding: 16,
+            background: 'var(--color-surface)',
+            borderRadius: 16,
+            border: '1px solid var(--color-border)',
+          }}>
+            <ExerciseSVG exerciseId={step.exerciseId} size={140} />
+          </div>
+        )}
 
         {/* Timer for timed steps */}
         {step.durationMin && (
@@ -574,7 +607,24 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
 
       {/* Bottom CTA — always visible, always in thumb zone */}
       {!step.durationMin && (
-        <div style={{ padding: '16px 0' }}>
+        <div style={{ padding: '16px 0', display: 'flex', gap: 10 }}>
+          {currentStep > 0 && (
+            <button
+              onClick={() => setCurrentStep(prev => prev - 1)}
+              style={{
+                background: 'var(--color-surface)',
+                color: 'var(--color-text-muted)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 14,
+                padding: '14px 20px',
+                fontSize: 15,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              ← Назад
+            </button>
+          )}
           <button
             onClick={() => {
               if (isThermotherapyStep(currentStep)) {
@@ -589,7 +639,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
               handleNextStep()
             }}
             style={{
-              width: '100%',
+              flex: 1,
               padding: '16px 0',
               borderRadius: '12px',
               fontWeight: 500,
