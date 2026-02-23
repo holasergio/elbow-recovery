@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Pill, Moon, Heartbeat, CalendarBlank } from '@phosphor-icons/react'
+import { Pill, Moon, Heartbeat, CalendarBlank, ArrowDown } from '@phosphor-icons/react'
 
 const healthSections = [
   {
@@ -21,6 +21,12 @@ const healthSections = [
     icon: Moon,
     label: 'Протокол сна',
     desc: 'Контроль сна и гормонального окна',
+  },
+  {
+    href: '/health/hanging',
+    icon: ArrowDown,
+    label: 'Свисание руки',
+    desc: 'История и аналитика по часам',
   },
   {
     href: '/health/calendar',
