@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ChartLine, Plus, ClockCounterClockwise, Target } from '@phosphor-icons/react'
 import { ROMChart } from '@/components/progress/rom-chart'
@@ -7,6 +8,82 @@ import { StreakCalendar } from '@/components/progress/streak-calendar'
 import { useROMHistory } from '@/hooks/use-rom'
 import { getCurrentPhase } from '@/data/patient'
 import { phases } from '@/data/phases'
+
+function DeficitInfo() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--color-text-muted)',
+          fontSize: 12,
+          cursor: 'pointer',
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
+        ℹ Как считается дефицит {open ? '▲' : '▼'}
+      </button>
+
+      {open && (
+        <div style={{
+          marginTop: 10,
+          padding: 16,
+          background: 'var(--color-surface)',
+          borderRadius: 12,
+          border: '1px solid var(--color-border)',
+          fontSize: 13,
+          lineHeight: 1.6,
+          color: 'var(--color-text)',
+        }}>
+          <p style={{ fontWeight: 600, marginBottom: 6 }}>Дефицит разгибания</p>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: 4 }}>
+            <strong>0°</strong> (полное разгибание) − ваше разгибание = дефицит
+          </p>
+          <p style={{
+            background: 'var(--color-bg)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontFamily: 'monospace',
+            marginBottom: 14,
+          }}>
+            0° − (−15°) = <strong>15° дефицит</strong>
+          </p>
+
+          <p style={{ fontWeight: 600, marginBottom: 6 }}>Дефицит сгибания</p>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: 4 }}>
+            <strong>145°</strong> (норма) − ваше сгибание = дефицит
+          </p>
+          <p style={{
+            background: 'var(--color-bg)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontFamily: 'monospace',
+            marginBottom: 14,
+          }}>
+            145° − 110° = <strong>35° дефицит</strong>
+          </p>
+
+          <p style={{ fontWeight: 600, marginBottom: 6 }}>Дуга движения (ROM Arc)</p>
+          <p style={{
+            background: 'var(--color-bg)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontFamily: 'monospace',
+          }}>
+            |дефицит разгибания| + сгибание = arc
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProgressPage() {
   const { latest } = useROMHistory()
@@ -84,6 +161,9 @@ export default function ProgressPage() {
           </div>
         </div>
       )}
+
+      {/* Deficit Formula Info */}
+      {latest && <DeficitInfo />}
 
       {/* ROM Chart */}
       <section style={{ marginBottom: '24px' }}>
