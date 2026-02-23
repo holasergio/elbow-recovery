@@ -128,6 +128,21 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     timerRunningRef.current = running
   }, [])
 
+  // Touch swipe navigation — hooks MUST be before any early return (Rules of Hooks)
+  const touchStartX = useRef<number>(0)
+  const touchStartY = useRef<number>(0)
+  const swipeActionRef = useRef<(dir: 'left' | 'right') => void>(() => {})
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(deltaX) < 60 || deltaY > Math.abs(deltaX) * 0.8) return
+    swipeActionRef.current(deltaX < 0 ? 'left' : 'right')
+  }, [])
+
   if (!session) {
     return <div style={{ padding: '24px 0' }}><p>Сессия не найдена</p></div>
   }
@@ -177,6 +192,12 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     } else {
       setCurrentStep(prev => prev + 1)
     }
+  }
+
+  // Update swipe handler with current step context on every render
+  swipeActionRef.current = (dir) => {
+    if (dir === 'left' && !isLastStep) void handleNextStep()
+    else if (dir === 'right' && currentStep > 0) setCurrentStep(prev => prev - 1)
   }
 
   const handleStepTimerComplete = () => {
@@ -241,29 +262,6 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     ? initialTimerElapsed
     : 0
 
-  // Touch swipe navigation
-  const touchStartX = useRef<number>(0)
-  const touchStartY = useRef<number>(0)
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }, [])
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current
-    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
-    // Only trigger if horizontal swipe > 60px and not primarily vertical
-    if (Math.abs(deltaX) < 60 || deltaY > Math.abs(deltaX) * 0.8) return
-    if (deltaX < 0) {
-      // Swipe left → next step
-      if (!isLastStep) handleNextStep()
-    } else {
-      // Swipe right → previous step
-      if (currentStep > 0) setCurrentStep(prev => prev - 1)
-    }
-  }, [currentStep, isLastStep, handleNextStep])
-
   return (
     <div
       onTouchStart={handleTouchStart}
@@ -272,6 +270,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         display: 'flex',
         flexDirection: 'column',
         minHeight: 'calc(100vh - 5rem)',
+        touchAction: 'pan-y',
       }}>
       {/* Header */}
       <div style={{

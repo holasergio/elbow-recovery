@@ -141,7 +141,7 @@ export default function ProgressPage() {
               </span>
             </div>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-              Сгибание {latest.flexion}° / Дефицит {latest.extensionDeficit}°
+              Сгиб: {latest.flexion}° · Разгиб: {latest.extensionDeficit > 0 ? `−${latest.extensionDeficit}` : '0'}° · Деф: {latest.extensionDeficit}°
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>

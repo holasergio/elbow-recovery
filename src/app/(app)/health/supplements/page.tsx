@@ -5,7 +5,7 @@ import { Pill, ArrowLeft } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
-import { supplements } from '@/data/supplements'
+import { supplements, slotLabels } from '@/data/supplements'
 import { SupplementChecklist } from '@/components/health/supplement-checklist'
 import { MonthCalendar, type CalendarDay } from '@/components/health/month-calendar'
 
@@ -19,12 +19,6 @@ export default function SupplementsPage() {
 
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null)
   const allSupplementLogs = useLiveQuery(() => db.supplementLogs.orderBy('date').toArray(), []) ?? []
-
-  // Name lookup: sup_collagen → "Коллаген"
-  const suppNameMap = useMemo(
-    () => new Map(supplements.map(s => [s.id, s.name])),
-    []
-  )
 
   const TOTAL_DAILY_SUPPLEMENTS = supplements.length // 16
 
@@ -118,30 +112,46 @@ export default function SupplementsPage() {
         title="История добавок"
       />
 
-      {calendarSelectedDate && selectedDateLogs.length > 0 && (
+      {calendarSelectedDate && (
         <div style={{ marginTop: 16 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 8 }}>
             {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
             {' — '}{selectedDateLogs.filter(l => l.taken).length}/{TOTAL_DAILY_SUPPLEMENTS} принято
           </p>
-          {selectedDateLogs.map(log => (
-            <div key={log.id} style={{
-              padding: '8px 14px',
-              background: 'var(--color-surface)',
-              borderRadius: 10,
-              border: `1px solid ${log.taken ? 'color-mix(in srgb, var(--color-primary) 30%, transparent)' : 'var(--color-border)'}`,
-              marginBottom: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}>
-              <span style={{ fontSize: 16 }}>{log.taken ? '✓' : '○'}</span>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 12, color: 'var(--color-text)', fontWeight: 500 }}>{suppNameMap.get(log.supplementId) ?? log.supplementId}</p>
-                <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{log.slot}{log.takenAt ? ' · ' + new Date(log.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+          {supplements.map(supplement => {
+            const log = selectedDateLogs.find(l => l.supplementId === supplement.id)
+            const taken = log?.taken ?? null // null = не залогировано
+            return (
+              <div key={supplement.id} style={{
+                padding: '8px 14px',
+                background: 'var(--color-surface)',
+                borderRadius: 10,
+                border: `1px solid ${taken === true ? 'color-mix(in srgb, var(--color-primary) 30%, transparent)' : 'var(--color-border)'}`,
+                marginBottom: 6,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                opacity: taken === null ? 0.55 : 1,
+              }}>
+                <span style={{ fontSize: 16, marginTop: 1, flexShrink: 0 }}>
+                  {taken === true ? '✓' : taken === false ? '○' : '−'}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: 'var(--color-text)', fontWeight: 500 }}>{supplement.name}</p>
+                  <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                    {slotLabels[supplement.slot]}{supplement.dose ? ` · ${supplement.dose}` : ''}
+                    {log?.takenAt ? ' · ' + new Date(log.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    {taken === null ? ' · не отмечено' : ''}
+                  </p>
+                  {supplement.form && (
+                    <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1, fontStyle: 'italic' }}>
+                      {supplement.form}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
