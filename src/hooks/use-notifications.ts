@@ -67,12 +67,27 @@ export function useNotifications() {
   const shownRef = useRef<Set<string>>(new Set())
   const { notificationsEnabled, notificationCategories } = useAppStore()
 
+  // Load persisted shown tags for today on mount — survives app updates
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`notif-shown-${todayKey()}`)
+      if (saved) {
+        const tags: string[] = JSON.parse(saved)
+        tags.forEach(t => shownRef.current.add(t))
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   /** Add an in-app notification and optionally fire browser notification */
   const pushNotification = useCallback(
     (title: string, body: string, type: InAppNotification['type'], tag: string) => {
       // Prevent duplicates
       if (shownRef.current.has(tag)) return
       shownRef.current.add(tag)
+      // Persist so dismissed notifications survive app updates/reloads
+      try {
+        localStorage.setItem(`notif-shown-${todayKey()}`, JSON.stringify([...shownRef.current]))
+      } catch { /* ignore */ }
 
       // In-app notification (always)
       const notif = createInAppNotification(title, body, type, tag)
@@ -219,6 +234,7 @@ export function useNotifications() {
       const now = new Date()
       if (now.getHours() === 0 && now.getMinutes() === 0) {
         shownRef.current.clear()
+        try { localStorage.removeItem(`notif-shown-${todayKey()}`) } catch { /* ignore */ }
       }
     }
 

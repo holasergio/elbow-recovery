@@ -49,9 +49,10 @@ function HistoryEntry({ entry }: { entry: ROMMeasurement }) {
           color: 'var(--color-text-secondary)',
           flexWrap: 'wrap',
         }}>
-          <span>Сгиб: {entry.flexion}°</span>
-          <span>Разгиб: {entry.extensionDeficit > 0 ? `−${entry.extensionDeficit}` : '0'}°</span>
-          <span>Деф.разг: {entry.extensionDeficit}°</span>
+          <span>Сгибание: {entry.flexion}°</span>
+          {entry.extensionDeficit > 0 && (
+            <span>Дефицит разгибания: {entry.extensionDeficit}°</span>
+          )}
           {entry.pronation != null && <span>Прон: {entry.pronation}°</span>}
           {entry.supination != null && <span>Суп: {entry.supination}°</span>}
         </div>

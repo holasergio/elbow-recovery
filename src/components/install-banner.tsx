@@ -11,7 +11,7 @@ export function InstallBanner() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true
 
-    const dismissed = sessionStorage.getItem('pwa-banner-dismissed')
+    const dismissed = localStorage.getItem('pwa-banner-dismissed')
 
     if (!isStandalone && !dismissed) {
       setVisible(true)
@@ -19,7 +19,7 @@ export function InstallBanner() {
   }, [])
 
   function handleDismiss() {
-    sessionStorage.setItem('pwa-banner-dismissed', '1')
+    localStorage.setItem('pwa-banner-dismissed', '1')
     setVisible(false)
   }
 
