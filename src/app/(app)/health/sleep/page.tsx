@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Moon, Star, Clock } from '@phosphor-icons/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { SleepForm } from '@/components/health/sleep-form'
 import { HormoneTimeline } from '@/components/health/hormone-timeline'
+import { MonthCalendar, type CalendarDay } from '@/components/health/month-calendar'
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ const QUALITY_LABELS: Record<number, string> = {
 export default function SleepPage() {
   const today = new Date().toISOString().split('T')[0]
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null)
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null)
 
   const todaySleep = useLiveQuery(
     () => db.sleepLogs.where('date').equals(today).first(),
@@ -53,6 +55,25 @@ export default function SleepPage() {
         .limit(7)
         .toArray(),
     []
+  )
+
+  const allSleepLogs = useLiveQuery(() => db.sleepLogs.orderBy('date').toArray(), []) ?? []
+
+  const sleepCalendarDays = useMemo((): CalendarDay[] => {
+    return allSleepLogs.map(log => ({
+      date: log.date,
+      hasData: true,
+      quality: log.totalHours >= 7.5 ? 'good' : log.totalHours >= 6 ? 'warning' : 'bad',
+      label: `${log.totalHours}ч`,
+    }))
+  }, [allSleepLogs])
+
+  const selectedSleepLog = useLiveQuery(
+    async () => {
+      if (!calendarSelectedDate) return undefined
+      return db.sleepLogs.where('date').equals(calendarSelectedDate).first()
+    },
+    [calendarSelectedDate]
   )
 
   return (
@@ -114,6 +135,41 @@ export default function SleepPage() {
       <div style={{ marginBottom: '24px' }}>
         <HormoneTimeline todaySleep={todaySleep ?? null} />
       </div>
+
+      <MonthCalendar
+        days={sleepCalendarDays}
+        onSelectDate={setCalendarSelectedDate}
+        selectedDate={calendarSelectedDate}
+        title="История сна"
+      />
+
+      {calendarSelectedDate && selectedSleepLog && (
+        <div style={{
+          marginTop: 12,
+          padding: 14,
+          background: 'var(--color-surface)',
+          borderRadius: 12,
+          border: '1px solid var(--color-border)',
+        }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>
+            {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+          </p>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+              &#x1F319; {selectedSleepLog.bedTime} &#x2192; &#x2600; {selectedSleepLog.wakeTime}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: selectedSleepLog.totalHours >= 7.5 ? 'var(--color-primary)' : selectedSleepLog.totalHours >= 6 ? '#f59e0b' : 'var(--color-error)' }}>
+              {selectedSleepLog.totalHours} ч
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+              {'★'.repeat(selectedSleepLog.quality)}{'☆'.repeat(5 - selectedSleepLog.quality)}
+            </span>
+          </div>
+          {selectedSleepLog.notes && (
+            <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 6 }}>{selectedSleepLog.notes}</p>
+          )}
+        </div>
+      )}
 
       {/* Sleep Form Card */}
       <div

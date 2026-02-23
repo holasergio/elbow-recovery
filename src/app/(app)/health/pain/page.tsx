@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Clock, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { PainForm } from '@/components/health/pain-form'
+import { MonthCalendar, type CalendarDay } from '@/components/health/month-calendar'
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ function getPainLevelColor(level: number): string {
 
 export default function PainDiaryPage() {
   const [expandedEntryId, setExpandedEntryId] = useState<number | null>(null)
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null)
   const today = new Date().toISOString().split('T')[0]
 
   const todayEntries = useLiveQuery(
@@ -68,6 +70,33 @@ export default function PainDiaryPage() {
         .sortBy('time'),
     [today]
   )
+
+  const allPainEntries = useLiveQuery(() => db.painEntries.orderBy('date').toArray(), []) ?? []
+
+  const painCalendarDays = useMemo((): CalendarDay[] => {
+    const byDate = new Map<string, number[]>()
+    for (const entry of allPainEntries) {
+      if (!byDate.has(entry.date)) byDate.set(entry.date, [])
+      byDate.get(entry.date)!.push(entry.level)
+    }
+    return Array.from(byDate.entries()).map(([date, levels]) => {
+      const maxLevel = Math.max(...levels)
+      return {
+        date,
+        hasData: true,
+        quality: maxLevel <= 3 ? 'good' : maxLevel <= 6 ? 'warning' : 'bad',
+        label: String(maxLevel),
+      }
+    })
+  }, [allPainEntries])
+
+  const selectedDateEntries = useLiveQuery(
+    async () => {
+      if (!calendarSelectedDate) return []
+      return db.painEntries.where('date').equals(calendarSelectedDate).sortBy('time')
+    },
+    [calendarSelectedDate]
+  ) ?? []
 
   return (
     <div style={{ paddingTop: '24px', paddingBottom: '32px' }}>
@@ -109,6 +138,46 @@ export default function PainDiaryPage() {
         </p>
       </div>
 
+      <MonthCalendar
+        days={painCalendarDays}
+        onSelectDate={setCalendarSelectedDate}
+        selectedDate={calendarSelectedDate}
+        title="История боли"
+      />
+
+      {calendarSelectedDate && selectedDateEntries.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 8 }}>
+            {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+          </p>
+          {selectedDateEntries.map(entry => (
+            <div key={entry.id} style={{
+              padding: '10px 14px',
+              background: 'var(--color-surface)',
+              borderRadius: 10,
+              border: '1px solid var(--color-border)',
+              marginBottom: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <span style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: entry.level <= 3 ? 'var(--color-primary)' : entry.level <= 6 ? '#f59e0b' : 'var(--color-error)',
+                minWidth: 28,
+              }}>{entry.level}</span>
+              <div>
+                <p style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500 }}>{entry.time}</p>
+                {entry.locations.length > 0 && (
+                  <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{entry.locations.join(', ')}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Form Card */}
       <div
         style={{
@@ -117,6 +186,7 @@ export default function PainDiaryPage() {
           backgroundColor: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
           boxShadow: 'var(--shadow-sm)',
+          marginTop: '24px',
         }}
       >
         <PainForm />

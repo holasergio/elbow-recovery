@@ -194,6 +194,11 @@ export function SupplementCard({
           >
             {supplement.timing}
           </div>
+          {supplement.idealNote && (
+            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', display: 'block', marginTop: 2 }}>
+              &#x23F1; {supplement.idealNote} ({supplement.idealTimeFrom}&#8211;{supplement.idealTimeTo})
+            </span>
+          )}
 
           {/* Expandable reason */}
           {(supplement.reason || supplement.note) && (
