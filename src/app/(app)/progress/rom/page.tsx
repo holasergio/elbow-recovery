@@ -42,20 +42,65 @@ function HistoryEntry({ entry }: { entry: ROMMeasurement }) {
 
       {/* Details */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          fontSize: 'var(--text-xs)',
-          color: 'var(--color-text-secondary)',
-          flexWrap: 'wrap',
-        }}>
-          <span>Сгибание: {entry.flexion}°</span>
-          {entry.extensionDeficit > 0 && (
-            <span>Дефицит разгибания: {entry.extensionDeficit}°</span>
-          )}
-          {entry.pronation != null && <span>Прон: {entry.pronation}°</span>}
-          {entry.supination != null && <span>Суп: {entry.supination}°</span>}
+        {/* Flexion + Extension in two columns */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+          {/* Flexion */}
+          <div style={{
+            flex: 1,
+            padding: '5px 8px',
+            borderRadius: 6,
+            backgroundColor: 'var(--color-surface-alt)',
+            border: '1px solid var(--color-border)',
+          }}>
+            <p style={{ fontSize: 9, color: 'var(--color-text-muted)', margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Сгибание
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+                {entry.flexion}°
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>/145°</span>
+            </div>
+            <p style={{ fontSize: 10, margin: '1px 0 0', color: 145 - entry.flexion > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+              {145 - entry.flexion > 0 ? `−${145 - entry.flexion}°` : 'норма'}
+            </p>
+          </div>
+
+          {/* Extension */}
+          <div style={{
+            flex: 1,
+            padding: '5px 8px',
+            borderRadius: 6,
+            backgroundColor: 'var(--color-surface-alt)',
+            border: '1px solid var(--color-border)',
+          }}>
+            <p style={{ fontSize: 9, color: 'var(--color-text-muted)', margin: '0 0 1px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Разгибание
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+                {entry.extensionDeficit > 0 ? `-${entry.extensionDeficit}` : '0'}°
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--color-text-muted)'}}>/0°</span>
+            </div>
+            <p style={{ fontSize: 10, margin: '1px 0 0', color: entry.extensionDeficit > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+              {entry.extensionDeficit > 0 ? `−${entry.extensionDeficit}°` : 'полное'}
+            </p>
+          </div>
         </div>
+
+        {/* Extra: pronation/supination */}
+        {(entry.pronation != null || entry.supination != null) && (
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-text-secondary)',
+          }}>
+            {entry.pronation != null && <span>Пронация: {entry.pronation}°</span>}
+            {entry.supination != null && <span>Супинация: {entry.supination}°</span>}
+          </div>
+        )}
         <div style={{
           display: 'flex',
           alignItems: 'center',

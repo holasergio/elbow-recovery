@@ -159,6 +159,14 @@ export function StreakCalendar() {
     return set
   }, [romMeasurements])
 
+  // ROM data for selected cell (picked from already-loaded romMeasurements)
+  const selectedRom = useMemo(() => {
+    if (!selectedCell?.hasRom || !romMeasurements) return null
+    return romMeasurements
+      .filter(r => r.date === selectedCell.dateStr)
+      .sort((a, b) => b.arc - a.arc)[0] ?? null
+  }, [selectedCell, romMeasurements])
+
   // Build the full-year grid:
   // - Find Jan 1 of current year
   // - Find the Monday of that week (may be in the previous year)
@@ -481,31 +489,70 @@ export function StreakCalendar() {
       {selectedCell && (
         <div style={{
           marginTop: 10,
-          padding: '8px 12px',
+          padding: '10px 12px',
           background: 'var(--color-surface-alt)',
           borderRadius: 8,
           fontSize: 12,
           color: 'var(--color-text)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
         }}>
-          <span style={{ color: 'var(--color-text-muted)' }}>
-            {new Date(selectedCell.dateStr + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-          </span>
-          <span style={{ fontWeight: 600 }}>
-            {selectedCell.count > 0
-              ? `${selectedCell.count} ${pluralSessions(selectedCell.count)}`
-              : 'Нет сессий'}
-            {selectedCell.hasRom && ' · замер ROM'}
-          </span>
-          <button
-            onClick={() => setSelectedCell(null)}
-            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 0, fontSize: 14 }}
-          >
-            ×
-          </button>
+          {/* Header row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: selectedRom ? 8 : 0 }}>
+            <span style={{ color: 'var(--color-text-muted)' }}>
+              {new Date(selectedCell.dateStr + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+            </span>
+            <span style={{ fontWeight: 600 }}>
+              {selectedCell.count > 0
+                ? `${selectedCell.count} ${pluralSessions(selectedCell.count)}`
+                : 'Нет сессий'}
+              {selectedCell.hasRom && !selectedRom && ' · замер ROM'}
+            </span>
+            <button
+              onClick={() => setSelectedCell(null)}
+              style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 0, fontSize: 14 }}
+            >
+              ×
+            </button>
+          </div>
+
+          {/* ROM details if available */}
+          {selectedRom && (
+            <div style={{
+              padding: '8px 10px',
+              background: 'var(--color-surface)',
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}>
+              <div>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 10, display: 'block', marginBottom: 1 }}>Дуга</span>
+                <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>
+                  {selectedRom.arc}°
+                </span>
+              </div>
+              <div>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 10, display: 'block', marginBottom: 1 }}>Сгибание</span>
+                <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text)' }}>
+                  {selectedRom.flexion}°
+                </span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 10, marginLeft: 3 }}>/ 145°</span>
+              </div>
+              {selectedRom.extensionDeficit > 0 ? (
+                <div>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: 10, display: 'block', marginBottom: 1 }}>Дефицит разгибания</span>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-warning)' }}>
+                    {selectedRom.extensionDeficit}°
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: 10, display: 'block', marginBottom: 1 }}>Разгибание</span>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-success)' }}>полное</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

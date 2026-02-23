@@ -112,39 +112,34 @@ export default function ProgressPage() {
       {/* Current ROM Badge */}
       {latest && (
         <div style={{
-          padding: '20px',
+          padding: '18px',
           borderRadius: 'var(--radius-lg)',
           backgroundColor: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
           boxShadow: 'var(--shadow-sm)',
           marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}>
-          <div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-              Текущая дуга
-            </p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-5xl)',
-                fontWeight: 700,
-                color: arcColor,
-                lineHeight: 1,
-              }}>
-                {latest.arc}°
-              </span>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                из {targetMax}°
-              </span>
+          {/* Arc + target header */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                Дуга движения
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--text-5xl)',
+                  fontWeight: 700,
+                  color: arcColor,
+                  lineHeight: 1,
+                }}>
+                  {latest.arc}°
+                </span>
+              </div>
+              <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                {latest.date}
+              </p>
             </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-              Сгибание: {latest.flexion}°{latest.extensionDeficit > 0 ? ` · Дефицит разгибания: ${latest.extensionDeficit}°` : ' · Разгибание полное'}
-            </p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '4px',
               padding: '6px 10px', borderRadius: 'var(--radius-full)',
@@ -155,9 +150,57 @@ export default function ProgressPage() {
                 Фаза {phaseNum}: {targetMin}–{targetMax}°
               </span>
             </div>
-            <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
-              {latest.date}
-            </p>
+          </div>
+
+          {/* Flexion + Extension detail row */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {/* Flexion */}
+            <div style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-border)',
+            }}>
+              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+                Сгибание
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+                  {latest.flexion}°
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>/ 145°</span>
+              </div>
+              <p style={{ fontSize: 11, margin: '3px 0 0', color: 145 - latest.flexion > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+                {145 - latest.flexion > 0
+                  ? `дефицит ${145 - latest.flexion}°`
+                  : 'норма ✓'}
+              </p>
+            </div>
+
+            {/* Extension */}
+            <div style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-border)',
+            }}>
+              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+                Разгибание
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+                  {latest.extensionDeficit > 0 ? `-${latest.extensionDeficit}` : '0'}°
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>/ 0°</span>
+              </div>
+              <p style={{ fontSize: 11, margin: '3px 0 0', color: latest.extensionDeficit > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+                {latest.extensionDeficit > 0
+                  ? `дефицит ${latest.extensionDeficit}°`
+                  : 'полное ✓'}
+              </p>
+            </div>
           </div>
         </div>
       )}
