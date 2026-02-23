@@ -26,24 +26,24 @@ export default function SupplementsPage() {
     []
   )
 
+  const TOTAL_DAILY_SUPPLEMENTS = supplements.length // 16
+
   const supplementCalendarDays = useMemo((): CalendarDay[] => {
-    const byDate = new Map<string, { taken: number; total: number }>()
+    const byDate = new Map<string, { taken: number }>()
     for (const log of allSupplementLogs) {
-      if (!byDate.has(log.date)) byDate.set(log.date, { taken: 0, total: 0 })
-      const d = byDate.get(log.date)!
-      d.total++
-      if (log.taken) d.taken++
+      if (!byDate.has(log.date)) byDate.set(log.date, { taken: 0 })
+      if (log.taken) byDate.get(log.date)!.taken++
     }
-    return Array.from(byDate.entries()).map(([date, { taken, total }]) => {
-      const pct = total > 0 ? taken / total : 0
+    return Array.from(byDate.entries()).map(([date, { taken }]) => {
+      const pct = taken / TOTAL_DAILY_SUPPLEMENTS
       return {
         date,
-        hasData: total > 0,
+        hasData: true,
         quality: pct >= 0.9 ? 'good' : pct >= 0.6 ? 'warning' : 'bad',
-        label: `${taken}/${total}`,
+        label: `${taken}/${TOTAL_DAILY_SUPPLEMENTS}`,
       }
     })
-  }, [allSupplementLogs])
+  }, [allSupplementLogs, TOTAL_DAILY_SUPPLEMENTS])
 
   const selectedDateLogs = useLiveQuery(
     async () => {
@@ -122,7 +122,7 @@ export default function SupplementsPage() {
         <div style={{ marginTop: 16 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 8 }}>
             {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
-            {' — '}{selectedDateLogs.filter(l => l.taken).length}/{selectedDateLogs.length} принято
+            {' — '}{selectedDateLogs.filter(l => l.taken).length}/{TOTAL_DAILY_SUPPLEMENTS} принято
           </p>
           {selectedDateLogs.map(log => (
             <div key={log.id} style={{

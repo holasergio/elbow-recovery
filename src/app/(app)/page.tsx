@@ -11,10 +11,10 @@ export default function DashboardPage() {
     <div>
       <DayCounter />
       <Motivation />
+      <ROMBadge />
       <TodayExercises />
       <MissedSessions />
       <HangingTracker />
-      <ROMBadge />
       <SessionList />
     </div>
   )

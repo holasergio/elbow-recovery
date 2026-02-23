@@ -241,12 +241,38 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     ? initialTimerElapsed
     : 0
 
+  // Touch swipe navigation
+  const touchStartX = useRef<number>(0)
+  const touchStartY = useRef<number>(0)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    // Only trigger if horizontal swipe > 60px and not primarily vertical
+    if (Math.abs(deltaX) < 60 || deltaY > Math.abs(deltaX) * 0.8) return
+    if (deltaX < 0) {
+      // Swipe left → next step
+      if (!isLastStep) handleNextStep()
+    } else {
+      // Swipe right → previous step
+      if (currentStep > 0) setCurrentStep(prev => prev - 1)
+    }
+  }, [currentStep, isLastStep, handleNextStep])
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 'calc(100vh - 5rem)',
-    }}>
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'calc(100vh - 5rem)',
+      }}>
       {/* Header */}
       <div style={{
         display: 'flex',
