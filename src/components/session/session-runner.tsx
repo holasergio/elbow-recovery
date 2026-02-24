@@ -42,6 +42,13 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
   const [skipWarning, setSkipWarning] = useState<{ type: 'warmup' | 'cooldown'; message: string } | null>(null)
   const [painDialog, setPainDialog] = useState(false)
 
+  // Pain assessment: before first exercise, after session
+  const [painBefore, setPainBefore] = useState<number | null>(null)
+  const [painAfter, setPainAfter] = useState<number | null>(null)
+  const [showPainBefore, setShowPainBefore] = useState(false)
+  const [showPainAfter, setShowPainAfter] = useState(false)
+  const painBeforeAskedRef = useRef(false)
+
   // Track timer elapsed for current step — updated by TimerDisplay via callback
   const timerElapsedRef = useRef<number>(restored?.timerElapsedSeconds ?? 0)
   const timerRunningRef = useRef<boolean>(restored?.isTimerRunning ?? false)
@@ -163,7 +170,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     )
   }
 
-  const handleCompleteSession = async () => {
+  const handleCompleteSession = async (painAfterVal?: number) => {
     // Save individual exercise completions to DB
     const today = new Date().toISOString().split('T')[0]
     const completedAt = new Date().toISOString()
@@ -178,6 +185,8 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         completedAt,
         completedSets: step.sets ?? 1,
         completedReps: step.reps ?? 0,
+        painBefore: painBefore ?? undefined,
+        painAfter: painAfterVal ?? undefined,
       })
     }
 
@@ -190,17 +199,30 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
 
   const handleNextStep = async () => {
     if (isLastStep) {
-      await handleCompleteSession()
+      // Ask pain after before showing completion
+      setShowPainAfter(true)
     } else {
       haptic('light')
-      setCurrentStep(prev => prev + 1)
+      const nextStep = currentStep + 1
+      // Check if next step is first exercise step — ask painBefore
+      if (!painBeforeAskedRef.current && session) {
+        const nextEx = session.steps[nextStep]
+        const hasExercise = nextEx?.exerciseId != null
+        const prevWasThermo = !session.steps[currentStep]?.exerciseId
+        if (hasExercise && prevWasThermo) {
+          painBeforeAskedRef.current = true
+          setShowPainBefore(true)
+        }
+      }
+      setCurrentStep(nextStep)
     }
   }
 
   // Update swipe handler with current step context on every render
   swipeActionRef.current = (dir) => {
     if (dir === 'left' && !isLastStep) void handleNextStep()
-    else if (dir === 'right' && currentStep > 0) setCurrentStep(prev => prev - 1)
+    else if (dir === 'left' && isLastStep) setShowPainAfter(true)
+    else if (dir === 'right' && currentStep > 0) { haptic('light'); setCurrentStep(prev => prev - 1) }
   }
 
   const handleStepTimerComplete = () => {
@@ -212,49 +234,157 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     handleNextStep()
   }
 
+  // Pain After screen — shown before completion
+  if (showPainAfter) {
+    return (
+      <PainRatingScreen
+        title="Боль после сессии"
+        subtitle="Как ощущается локоть сейчас?"
+        onConfirm={(val) => {
+          setPainAfter(val)
+          setShowPainAfter(false)
+          void handleCompleteSession(val)
+        }}
+        onSkip={() => {
+          setShowPainAfter(false)
+          void handleCompleteSession()
+        }}
+      />
+    )
+  }
+
+  // Pain Before screen — shown before first exercise
+  if (showPainBefore) {
+    return (
+      <PainRatingScreen
+        title="Боль перед упражнениями"
+        subtitle="Оцени состояние локтя сейчас"
+        onConfirm={(val) => {
+          setPainBefore(val)
+          setShowPainBefore(false)
+        }}
+        onSkip={() => setShowPainBefore(false)}
+      />
+    )
+  }
+
   if (isComplete) {
+    const exerciseCount = session.steps.filter(s => s.exerciseId).length
+    const painImproved = painBefore !== null && painAfter !== null && painAfter < painBefore
+    const painSame = painBefore !== null && painAfter !== null && painAfter === painBefore
+    const motivations = [
+      'Каждая сессия — это вклад в восстановление.',
+      'Ты наращиваешь стабильность.',
+      'Локоть помнит каждое твоё усилие.',
+      'Движение — это лечение.',
+    ]
+    const motivation = motivations[sessionId % motivations.length]
+
     return (
       <div style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '70vh',
-        textAlign: 'center',
-        padding: '0 24px',
+        padding: '32px 0 24px',
+        animation: 'step-slide-in 0.4s ease-out',
       }}>
-        <CheckCircle size={64} weight="fill" style={{ color: 'var(--color-primary)' }} />
+        <style>{`
+          @keyframes step-slide-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes pop-in {
+            0%   { transform: scale(0.7); opacity: 0; }
+            70%  { transform: scale(1.1); }
+            100% { transform: scale(1);   opacity: 1; }
+          }
+        `}</style>
+
+        <CheckCircle
+          size={72}
+          weight="fill"
+          style={{ color: 'var(--color-primary)', animation: 'pop-in 0.5s ease-out' }}
+        />
         <h2 style={{
           marginTop: '16px',
           fontFamily: 'var(--font-display)',
-          fontSize: 'var(--text-2xl)',
-          fontWeight: 600,
+          fontSize: 'var(--text-3xl)',
+          fontWeight: 700,
+          textAlign: 'center',
         }}>
-          Сессия завершена
+          Сессия завершена!
         </h2>
-        <p style={{ marginTop: '8px', color: 'var(--color-text-secondary)' }}>
-          {session.name} · {session.durationMin} мин
+        <p style={{ marginTop: '4px', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
+          {session.name}
         </p>
-        <p style={{ marginTop: '4px', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-          Ты наращиваешь стабильность.
+
+        {/* Stats grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 10,
+          width: '100%',
+          marginTop: 28,
+        }}>
+          <StatCard label="Длительность" value={`${session.durationMin} мин`} />
+          <StatCard label="Упражнений" value={`${exerciseCount}`} />
+          {painBefore !== null && painAfter !== null && (
+            <StatCard
+              label="Боль"
+              value={`${painBefore} → ${painAfter}`}
+              accent={painImproved ? 'success' : painSame ? undefined : 'warning'}
+              sub={painImproved ? '↓ стало лучше' : painSame ? 'без изменений' : '↑ выше нормы'}
+            />
+          )}
+          {painBefore !== null && painAfter === null && (
+            <StatCard label="Боль до" value={`${painBefore}/10`} />
+          )}
+        </div>
+
+        <p style={{
+          marginTop: 24,
+          fontSize: 'var(--text-sm)',
+          color: 'var(--color-text-muted)',
+          fontStyle: 'italic',
+          textAlign: 'center',
+        }}>
+          {motivation}
         </p>
-        <button
-          onClick={() => router.push('/')}
-          style={{
-            marginTop: '32px',
-            width: '100%',
-            padding: '16px 0',
-            borderRadius: '12px',
-            fontWeight: 500,
-            color: 'white',
-            fontSize: 'var(--text-lg)',
-            backgroundColor: 'var(--color-primary)',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          На главную
-        </button>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 28 }}>
+          <button
+            onClick={() => router.push('/')}
+            style={{
+              width: '100%',
+              padding: '16px 0',
+              borderRadius: '12px',
+              fontWeight: 600,
+              color: 'white',
+              fontSize: 'var(--text-base)',
+              backgroundColor: 'var(--color-primary)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            На главную
+          </button>
+          <button
+            onClick={() => router.push('/progress/rom')}
+            style={{
+              width: '100%',
+              padding: '13px 0',
+              borderRadius: '12px',
+              fontWeight: 500,
+              color: 'var(--color-primary)',
+              fontSize: 'var(--text-sm)',
+              backgroundColor: 'var(--color-primary-light)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Записать замер ROM
+          </button>
+        </div>
       </div>
     )
   }
@@ -729,6 +859,164 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
             <ArrowRight size={20} />
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ─── StatCard ──────────────────────────────────────────────────────
+function StatCard({ label, value, accent, sub }: {
+  label: string
+  value: string
+  accent?: 'success' | 'warning'
+  sub?: string
+}) {
+  const color = accent === 'success'
+    ? 'var(--color-success)'
+    : accent === 'warning'
+      ? 'var(--color-warning)'
+      : 'var(--color-text)'
+
+  return (
+    <div style={{
+      padding: '14px 16px',
+      borderRadius: 'var(--radius-md)',
+      backgroundColor: 'var(--color-surface-alt)',
+      border: '1px solid var(--color-border)',
+    }}>
+      <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+        {label}
+      </p>
+      <p style={{ fontSize: 22, fontWeight: 700, color, margin: 0, fontFamily: 'var(--font-display)' }}>
+        {value}
+      </p>
+      {sub && (
+        <p style={{ fontSize: 11, color, margin: '2px 0 0', opacity: 0.8 }}>{sub}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── PainRatingScreen ──────────────────────────────────────────────
+function PainRatingScreen({ title, subtitle, onConfirm, onSkip }: {
+  title: string
+  subtitle: string
+  onConfirm: (val: number) => void
+  onSkip: () => void
+}) {
+  const [selected, setSelected] = useState<number | null>(null)
+
+  const getColor = (v: number) => {
+    if (v <= 3) return 'var(--color-success)'
+    if (v <= 6) return 'var(--color-warning)'
+    return 'var(--color-error)'
+  }
+
+  const labels: Record<number, string> = {
+    0: 'Нет боли',
+    1: 'Едва заметна', 2: 'Лёгкая',
+    3: 'Умеренная', 4: 'Заметная', 5: 'Средняя',
+    6: 'Сильная', 7: 'Очень сильная',
+    8: 'Сильнейшая', 9: 'Невыносимая', 10: 'Максимальная',
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '75vh',
+      padding: '32px 0 24px',
+      animation: 'step-slide-in 0.3s ease-out',
+    }}>
+      <style>{`
+        @keyframes step-slide-in {
+          from { opacity: 0; transform: translateX(20px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700, margin: '0 0 4px' }}>
+        {title}
+      </h2>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 28 }}>
+        {subtitle}
+      </p>
+
+      {/* 0–10 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', gap: 4 }}>
+        {Array.from({ length: 11 }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => { haptic('light'); setSelected(i) }}
+            style={{
+              aspectRatio: '1',
+              borderRadius: 8,
+              border: selected === i ? `2px solid ${getColor(i)}` : '2px solid transparent',
+              backgroundColor: selected === i
+                ? `color-mix(in srgb, ${getColor(i)} 20%, transparent)`
+                : 'var(--color-surface-alt)',
+              fontWeight: selected === i ? 700 : 400,
+              fontSize: 14,
+              color: selected === i ? getColor(i) : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            {i}
+          </button>
+        ))}
+      </div>
+
+      {/* Color scale hint */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+        <span style={{ fontSize: 10, color: 'var(--color-success)' }}>нет боли</span>
+        <span style={{ fontSize: 10, color: 'var(--color-warning)' }}>умеренная</span>
+        <span style={{ fontSize: 10, color: 'var(--color-error)' }}>сильная</span>
+      </div>
+
+      {selected !== null && (
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <span style={{ fontSize: 'var(--text-sm)', color: getColor(selected), fontWeight: 600 }}>
+            {selected}/10 — {labels[selected]}
+          </span>
+        </div>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24 }}>
+        <button
+          onClick={() => { if (selected !== null) { haptic('medium'); onConfirm(selected) } }}
+          disabled={selected === null}
+          style={{
+            padding: '16px 0',
+            borderRadius: 12,
+            fontWeight: 600,
+            fontSize: 'var(--text-base)',
+            color: 'white',
+            backgroundColor: selected !== null ? 'var(--color-primary)' : 'var(--color-border)',
+            border: 'none',
+            cursor: selected !== null ? 'pointer' : 'default',
+            transition: 'background-color 0.2s',
+          }}
+        >
+          Подтвердить
+        </button>
+        <button
+          onClick={onSkip}
+          style={{
+            padding: '13px 0',
+            borderRadius: 12,
+            fontWeight: 500,
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-muted)',
+            backgroundColor: 'transparent',
+            border: '1px solid var(--color-border)',
+            cursor: 'pointer',
+          }}
+        >
+          Пропустить
+        </button>
       </div>
     </div>
   )
