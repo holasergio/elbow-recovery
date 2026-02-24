@@ -15,6 +15,7 @@ import {
 } from '@/lib/session-store'
 import { CheckCircle, ArrowRight, Pause, Play, WarningCircle } from '@phosphor-icons/react'
 import { playSound } from '@/lib/audio'
+import { haptic } from '@/lib/haptic'
 import { ExerciseSVG } from '@/components/exercises/exercise-svg'
 
 interface SessionRunnerProps {
@@ -183,6 +184,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     // Clear persisted state — session is done
     clearSessionState(sessionId)
     playSound('sessionComplete')
+    haptic('milestone')
     setIsComplete(true)
   }
 
@@ -190,6 +192,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
     if (isLastStep) {
       await handleCompleteSession()
     } else {
+      haptic('light')
       setCurrentStep(prev => prev + 1)
     }
   }
@@ -337,16 +340,26 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
         ))}
       </div>
 
-      {/* Step content — centered */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        padding: '0 16px',
-      }}>
+      {/* Step content — centered, animated on step change */}
+      <div
+        key={`step-${currentStep}`}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          padding: '0 16px',
+          animation: 'step-slide-in 0.25s ease-out',
+        }}
+      >
+        <style>{`
+          @keyframes step-slide-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+        `}</style>
         <h2 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'var(--text-2xl)',
@@ -721,7 +734,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
   )
 }
 
-// Timer sub-component with persistence support
+// Timer sub-component — circular SVG ring + digital readout
 function TimerDisplay({
   seconds,
   initialElapsed = 0,
@@ -746,6 +759,16 @@ function TimerDisplay({
     }
   }, [autoStart, start, isComplete])
 
+  // Haptic + sound when timer reaches zero
+  const completedRef = useRef(false)
+  useEffect(() => {
+    if (isComplete && !completedRef.current) {
+      completedRef.current = true
+      haptic('success')
+      playSound('holdEnd')
+    }
+  }, [isComplete])
+
   // Report timer state changes to parent for persistence
   useEffect(() => {
     onStateChange?.(getElapsed(), isRunning)
@@ -754,30 +777,92 @@ function TimerDisplay({
   const mins = Math.floor(remaining / 60)
   const secs = remaining % 60
 
-  return (
-    <div style={{
-      marginTop: '32px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    }}>
-      <p style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: '4rem',
-        fontWeight: 700,
-        fontVariantNumeric: 'tabular-nums',
-        lineHeight: 1,
-        color: isComplete ? 'var(--color-primary)' : 'var(--color-text)',
-      }}>
-        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-      </p>
+  // SVG ring parameters
+  const R = 68
+  const SIZE = 160
+  const CIRCUMFERENCE = 2 * Math.PI * R
+  const progress = seconds > 0 ? remaining / seconds : 0
+  const dashOffset = CIRCUMFERENCE * (1 - progress)
 
-      <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+  return (
+    <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* Circular ring */}
+      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
+        <svg
+          width={SIZE}
+          height={SIZE}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          style={{ transform: 'rotate(-90deg)' }}
+        >
+          {/* Background track */}
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={R}
+            fill="none"
+            stroke="var(--color-border)"
+            strokeWidth="8"
+          />
+          {/* Progress arc */}
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={R}
+            fill="none"
+            stroke={isComplete ? 'var(--color-success)' : 'var(--color-primary)'}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={dashOffset}
+            style={{ transition: 'stroke-dashoffset 0.5s linear, stroke 0.3s ease' }}
+          />
+        </svg>
+
+        {/* Digital readout centered inside ring */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '2.2rem',
+            fontWeight: 700,
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1,
+            color: isComplete ? 'var(--color-success)' : 'var(--color-text)',
+          }}>
+            {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+          </span>
+          {isRunning && (
+            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              идёт
+            </span>
+          )}
+          {!isRunning && !isComplete && remaining > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              пауза
+            </span>
+          )}
+          {isComplete && (
+            <span style={{ fontSize: 10, color: 'var(--color-success)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              готово
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
         {!isComplete && (
           <button
-            onClick={isRunning ? pause : start}
+            onClick={() => { haptic('light'); isRunning ? pause() : start() }}
             style={{
-              padding: '12px 24px',
+              padding: '12px 28px',
               borderRadius: '12px',
               fontWeight: 500,
               display: 'flex',
@@ -787,6 +872,7 @@ function TimerDisplay({
               color: isRunning ? 'var(--color-text)' : 'white',
               border: isRunning ? '1px solid var(--color-border)' : 'none',
               cursor: 'pointer',
+              fontSize: 'var(--text-base)',
             }}
           >
             {isRunning ? <><Pause size={18} /> Пауза</> : <><Play size={18} weight="fill" /> Старт</>}
@@ -806,6 +892,7 @@ function TimerDisplay({
               backgroundColor: 'var(--color-primary)',
               border: 'none',
               cursor: 'pointer',
+              animation: 'step-slide-in 0.3s ease-out',
             }}
           >
             Далее <ArrowRight size={18} />
