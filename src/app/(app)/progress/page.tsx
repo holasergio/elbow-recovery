@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChartLine, Plus, ClockCounterClockwise, Target } from '@phosphor-icons/react'
+import { ChartLine, Plus, ClockCounterClockwise, Target, Moon, Heartbeat, TrendUp, TrendDown } from '@phosphor-icons/react'
 import { ROMChart } from '@/components/progress/rom-chart'
 import { StreakCalendar } from '@/components/progress/streak-calendar'
 import { useROMHistory } from '@/hooks/use-rom'
 import { getCurrentPhase } from '@/data/patient'
 import { phases } from '@/data/phases'
+import { useSleepPainInsight, useWeeklyStats } from '@/hooks/use-insights'
 
 function DeficitInfo() {
   const [open, setOpen] = useState(false)
@@ -81,6 +82,147 @@ function DeficitInfo() {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Weekly Summary Card ──────────────────────────────────────────
+function WeeklySummaryCard() {
+  const stats = useWeeklyStats()
+
+  const sessionDelta = stats.sessionsThisWeek - stats.sessionsLastWeek
+  const sessionColor = sessionDelta >= 0 ? 'var(--color-success)' : 'var(--color-warning)'
+
+  return (
+    <div style={{
+      padding: '16px',
+      borderRadius: 'var(--radius-lg)',
+      backgroundColor: 'var(--color-surface)',
+      border: '1px solid var(--color-border)',
+      boxShadow: 'var(--shadow-sm)',
+      marginBottom: 20,
+    }}>
+      <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+        Эта неделя
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {/* Sessions */}
+        <div style={{ padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
+          <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Сессии</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+              {stats.sessionsThisWeek}
+            </span>
+            {stats.sessionsLastWeek > 0 && (
+              <span style={{ fontSize: 11, color: sessionColor, display: 'flex', alignItems: 'center', gap: 2 }}>
+                {sessionDelta >= 0
+                  ? <TrendUp size={12} weight="bold" />
+                  : <TrendDown size={12} weight="bold" />}
+                {Math.abs(sessionDelta)}
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+            пред. {stats.sessionsLastWeek}
+          </p>
+        </div>
+
+        {/* ROM */}
+        {stats.romThisWeek !== null && (
+          <div style={{ padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
+            <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>ROM лучший</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>
+                {stats.romThisWeek}°
+              </span>
+              {stats.romDelta !== null && (
+                <span style={{ fontSize: 11, color: stats.romDelta >= 0 ? 'var(--color-success)' : 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {stats.romDelta >= 0
+                    ? <TrendUp size={12} weight="bold" />
+                    : <TrendDown size={12} weight="bold" />}
+                  {Math.abs(stats.romDelta)}°
+                </span>
+              )}
+            </div>
+            {stats.romLastWeek !== null && (
+              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                пред. {stats.romLastWeek}°
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Sleep */}
+        {stats.avgSleepHours !== null && (
+          <div style={{ padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <Moon size={11} weight="duotone" style={{ color: 'var(--color-info)' }} />
+              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Сон</p>
+            </div>
+            <span style={{ fontSize: 22, fontWeight: 700, color: stats.avgSleepHours >= 7 ? 'var(--color-success)' : 'var(--color-warning)', fontFamily: 'var(--font-display)' }}>
+              {stats.avgSleepHours}ч
+            </span>
+            <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>средн. в неделю</p>
+          </div>
+        )}
+
+        {/* Pain */}
+        {stats.avgPainThisWeek !== null && (
+          <div style={{ padding: '10px 12px', borderRadius: 10, backgroundColor: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <Heartbeat size={11} weight="duotone" style={{ color: 'var(--color-error)' }} />
+              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Боль средн.</p>
+            </div>
+            <span style={{ fontSize: 22, fontWeight: 700, color: stats.avgPainThisWeek <= 3 ? 'var(--color-success)' : stats.avgPainThisWeek <= 6 ? 'var(--color-warning)' : 'var(--color-error)', fontFamily: 'var(--font-display)' }}>
+              {stats.avgPainThisWeek}/10
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Sleep↔Pain Insight Card ──────────────────────────────────────
+function SleepPainInsightCard() {
+  const insight = useSleepPainInsight()
+
+  if (!insight.hasData) return null
+
+  const improved = insight.difference > 0.5 // poor sleep → higher pain by 0.5+
+  const neutral = !improved
+
+  return (
+    <div style={{
+      padding: '14px 16px',
+      borderRadius: 'var(--radius-lg)',
+      backgroundColor: improved
+        ? 'color-mix(in srgb, var(--color-info) 10%, transparent)'
+        : 'var(--color-surface)',
+      border: `1px solid ${improved ? 'color-mix(in srgb, var(--color-info) 25%, transparent)' : 'var(--color-border)'}`,
+      marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <Moon size={20} weight="duotone" style={{ color: 'var(--color-info)', flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', margin: '0 0 4px' }}>
+            {improved
+              ? `Сон влияет на боль: +${insight.difference} балла`
+              : 'Связь сна и боли'}
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
+            {improved
+              ? `При сне <6ч боль в среднем ${insight.poorSleepAvgPain}/10, при ≥6ч — ${insight.goodSleepAvgPain}/10. Хороший сон снижает болевой порог.`
+              : neutral
+                ? `При сне <6ч: ${insight.poorSleepAvgPain}/10, при ≥6ч: ${insight.goodSleepAvgPain}/10. Разница незначительная.`
+                : ''
+            }
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+            Анализ за 60 дней ({insight.poorSleepDays + insight.goodSleepDays} дней с данными)
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -257,6 +399,22 @@ export default function ProgressPage() {
         </h2>
         <StreakCalendar />
       </section>
+
+      {/* Weekly Summary */}
+      <section style={{ marginBottom: '8px' }}>
+        <h2 style={{
+          fontSize: 'var(--text-sm)', fontWeight: 600,
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase', letterSpacing: '0.05em',
+          marginBottom: '12px',
+        }}>
+          Итоги недели
+        </h2>
+        <WeeklySummaryCard />
+      </section>
+
+      {/* Sleep↔Pain Insight */}
+      <SleepPainInsightCard />
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '8px' }}>
