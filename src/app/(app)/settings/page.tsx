@@ -1,6 +1,7 @@
 'use client'
 
-import { GearSix, User, CalendarBlank } from '@phosphor-icons/react'
+import { GearSix, User, CalendarBlank, Trophy, ArrowRight } from '@phosphor-icons/react'
+import Link from 'next/link'
 import { patient, getDaysSinceSurgery } from '@/data/patient'
 import { ThemeToggle } from '@/components/settings/theme-toggle'
 import { NotificationSettings } from '@/components/settings/notification-settings'
@@ -120,6 +121,33 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Achievements link */}
+      <Link
+        href="/settings/achievements"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          padding: 16,
+          borderRadius: 'var(--radius-lg)',
+          backgroundColor: 'var(--color-accent-light)',
+          border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <Trophy size={24} weight="duotone" style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--color-text)', display: 'block' }}>
+            Достижения
+          </span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+            Бейджи, XP, уровень
+          </span>
+        </div>
+        <ArrowRight size={18} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+      </Link>
 
       {/* Theme */}
       <SectionCard title="Тема">

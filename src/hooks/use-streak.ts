@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 
 /**
- * Returns current active streak (consecutive days with ≥1 session, ending today or yesterday)
+ * Returns current active streak (consecutive days with >=1 session, ending today or yesterday)
  * and total sessions count.
  */
 export function useStreak() {
@@ -24,7 +24,7 @@ export function useStreak() {
   )
 
   return useMemo(() => {
-    if (!sessions) return { streak: 0, totalSessions: 0, activeDays: 0 }
+    if (!sessions) return { streak: 0, totalSessions: 0, activeDays: 0, frozenYesterday: false }
 
     const activeDates = new Set(sessions.map(s => s.date))
     const totalSessions = sessions.length
@@ -46,6 +46,16 @@ export function useStreak() {
       }
     }
 
-    return { streak, totalSessions, activeDays }
+    // Check if streak would have broken yesterday (no session) but today hasn't started yet
+    const yesterday = (() => {
+      const d = new Date()
+      d.setDate(d.getDate() - 1)
+      return d.toISOString().split('T')[0]
+    })()
+    const hadYesterday = activeDates.has(yesterday)
+    const hadToday = activeDates.has(today)
+    const frozenYesterday = !hadYesterday && !hadToday && streak === 0
+
+    return { streak, totalSessions, activeDays, frozenYesterday }
   }, [sessions, today])
 }

@@ -5,10 +5,16 @@ import { TodayExercises } from '@/components/dashboard/today-exercises'
 import { MissedSessions } from '@/components/dashboard/missed-sessions'
 import { Motivation } from '@/components/dashboard/motivation'
 import { HangingTracker } from '@/components/dashboard/hanging-tracker'
+import { RecoveryScoreCard } from '@/components/dashboard/recovery-score'
+import { AchievementWatcher } from '@/components/dashboard/achievement-watcher'
+import { AchievementToast } from '@/components/dashboard/achievement-toast'
 
 export default function DashboardPage() {
   return (
     <div>
+      <AchievementWatcher />
+      <AchievementToast />
+      <RecoveryScoreCard />
       <DayCounter />
       <Motivation />
       <ROMBadge />
