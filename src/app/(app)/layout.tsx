@@ -9,8 +9,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <InstallBanner />
       <PullToRefresh>
         <main
-          className="min-h-screen pb-20 max-w-lg mx-auto px-4"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)', overflowX: 'hidden' }}
+          className="min-h-screen max-w-lg mx-auto px-4"
+          style={{
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+            overflowX: 'hidden',
+          }}
         >
           {children}
         </main>

@@ -28,17 +28,24 @@ export function MissedSessions() {
     () => db.exerciseSessions.where('date').equals(today).toArray(),
     [today]
   )
+  const skippedToday = useLiveQuery(
+    () => db.skippedSessions.where('date').equals(today).toArray(),
+    [today]
+  )
 
   const missedSessions = useMemo(() => {
     if (!todaySessions) return []
     const now = new Date()
     const currentTimeMin = now.getHours() * 60 + now.getMinutes()
     const completedSlots = new Set(todaySessions.map(s => s.sessionSlot))
+    const skippedSlots = new Set(skippedToday?.map(s => s.sessionSlot) ?? [])
     return dailySessions.filter(session => {
       const [h, m] = session.time.split(':').map(Number)
-      return (currentTimeMin > h * 60 + m + 30) && !completedSlots.has(session.id)
+      return (currentTimeMin > h * 60 + m + 30)
+        && !completedSlots.has(session.id)
+        && !skippedSlots.has(session.id)
     })
-  }, [todaySessions])
+  }, [todaySessions, skippedToday])
 
   if (!missedSessions || missedSessions.length === 0) return null
 

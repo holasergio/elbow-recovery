@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { House, ListChecks, ChartLineUp, Heart, GearSix } from '@phosphor-icons/react'
 import { db } from '@/lib/db'
@@ -18,6 +18,14 @@ const tabs = [
 
 function useMissedCount(): number {
   const today = new Date().toISOString().split('T')[0]
+  const [now, setNow] = useState(() => new Date())
+
+  // Update current time every 60s so badge reflects newly missed sessions
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(interval)
+  }, [])
+
   const todaySessions = useLiveQuery(
     () => db.exerciseSessions.where('date').equals(today).toArray(),
     [today]
@@ -25,14 +33,13 @@ function useMissedCount(): number {
 
   return useMemo(() => {
     if (!todaySessions) return 0
-    const now = new Date()
     const currentTimeMin = now.getHours() * 60 + now.getMinutes()
     const completedSlots = new Set(todaySessions.map(s => s.sessionSlot))
     return dailySessions.filter(session => {
       const [h, m] = session.time.split(':').map(Number)
       return (currentTimeMin > h * 60 + m + 30) && !completedSlots.has(session.id)
     }).length
-  }, [todaySessions])
+  }, [todaySessions, now])
 }
 
 export function BottomTabs() {

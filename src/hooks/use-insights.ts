@@ -121,10 +121,6 @@ export function useWeeklyStats(): WeeklyStats {
     () => db.sleepLogs.where('date').between(thisWeekStart, today, true, true).toArray(),
     [thisWeekStart, today]
   )
-  const painThisWeek = useLiveQuery(
-    () => db.exerciseSessions.where('date').between(thisWeekStart, today, true, true).toArray(),
-    [thisWeekStart, today]
-  )
 
   return useMemo((): WeeklyStats => {
     const swCount = sessionsThisWeek?.length ?? 0
@@ -142,7 +138,8 @@ export function useWeeklyStats(): WeeklyStats {
       ? Math.round((sleepThisWeek.reduce((a, b) => a + b.totalHours, 0) / sleepThisWeek.length) * 10) / 10
       : null
 
-    const painEntries = painThisWeek?.flatMap(s => {
+    // Reuse sessionsThisWeek for pain data (same query, no duplicate)
+    const painEntries = sessionsThisWeek?.flatMap(s => {
       const p = []
       if (s.painBefore != null) p.push(s.painBefore)
       if (s.painAfter != null) p.push(s.painAfter)
@@ -161,5 +158,5 @@ export function useWeeklyStats(): WeeklyStats {
       avgSleepHours: sleepHours,
       avgPainThisWeek: avgPain,
     }
-  }, [sessionsThisWeek, sessionsLastWeek, romThisWeek, romLastWeek, sleepThisWeek, painThisWeek])
+  }, [sessionsThisWeek, sessionsLastWeek, romThisWeek, romLastWeek, sleepThisWeek])
 }

@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/stores/app-store'
-import { FirstAidKit, CalendarCheck, Confetti, ArrowRight, Check } from '@phosphor-icons/react'
-import { getDaysSinceSurgery } from '@/data/patient'
+import { FirstAidKit, CalendarCheck, Confetti, ArrowRight, Check, PencilSimple } from '@phosphor-icons/react'
+import { getDaysSinceSurgery, getEffectiveSurgeryDate } from '@/data/patient'
 
 /* ──────────────────────────────────────────── */
 /*  Step indicator dots                         */
@@ -113,7 +113,20 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
 /*  Step 2 — Surgery date confirmation          */
 /* ──────────────────────────────────────────── */
 function StepSurgeryDate({ onNext }: { onNext: () => void }) {
-  const days = getDaysSinceSurgery()
+  const { setSurgeryDate } = useAppStore()
+  const [editing, setEditing] = useState(false)
+  const [dateValue, setDateValue] = useState(getEffectiveSurgeryDate)
+  const [days, setDays] = useState(getDaysSinceSurgery)
+
+  const handleConfirmDate = () => {
+    setSurgeryDate(dateValue)
+    setDays(Math.floor((Date.now() - new Date(dateValue).getTime()) / 86_400_000))
+    setEditing(false)
+  }
+
+  const displayDate = new Date(dateValue + 'T00:00:00').toLocaleDateString('ru-RU', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
 
   return (
     <div
@@ -143,71 +156,107 @@ function StepSurgeryDate({ onNext }: { onNext: () => void }) {
         Дата операции
       </h1>
 
-      <div
-        className="mt-6 py-4 px-6 rounded-2xl"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <p
-          className="text-2xl font-semibold"
-          style={{
-            fontFamily: 'var(--font-display)',
-            color: 'var(--color-text)',
-          }}
-        >
-          5 января 2026
-        </p>
-      </div>
+      {editing ? (
+        <div className="mt-6 w-full flex flex-col gap-3">
+          <input
+            type="date"
+            value={dateValue}
+            onChange={(e) => setDateValue(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: 16,
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              fontSize: 'var(--text-base)',
+              fontFamily: 'inherit',
+            }}
+          />
+          <button
+            className="w-full py-4 rounded-2xl text-base font-semibold flex items-center justify-center gap-2"
+            style={{ backgroundColor: 'var(--color-primary)', color: '#fff', border: 'none' }}
+            onClick={handleConfirmDate}
+          >
+            <Check size={20} weight="bold" /> Сохранить дату
+          </button>
+          <button
+            className="w-full py-3 rounded-2xl text-sm"
+            style={{ backgroundColor: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+            onClick={() => setEditing(false)}
+          >
+            Отмена
+          </button>
+        </div>
+      ) : (
+        <>
+          <div
+            className="mt-6 py-4 px-6 rounded-2xl flex items-center gap-3"
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <p
+              className="text-2xl font-semibold"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--color-text)',
+              }}
+            >
+              {displayDate}
+            </p>
+          </div>
 
-      <p
-        className="mt-4 text-sm"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        Это верно?
-      </p>
+          <p
+            className="mt-4 text-sm"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Это верно?
+          </p>
 
-      <div
-        className="mt-6 py-3 px-5 rounded-full inline-flex items-center gap-2"
-        style={{
-          backgroundColor: 'var(--color-primary-light)',
-          color: 'var(--color-primary)',
-        }}
-      >
-        <span className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)' }}>
-          День {days}
-        </span>
-        <span className="text-sm" style={{ opacity: 0.8 }}>
-          после операции
-        </span>
-      </div>
+          <div
+            className="mt-6 py-3 px-5 rounded-full inline-flex items-center gap-2"
+            style={{
+              backgroundColor: 'var(--color-primary-light)',
+              color: 'var(--color-primary)',
+            }}
+          >
+            <span className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)' }}>
+              День {days}
+            </span>
+            <span className="text-sm" style={{ opacity: 0.8 }}>
+              после операции
+            </span>
+          </div>
 
-      <div className="mt-10 w-full flex gap-3">
-        <button
-          className="flex-1 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98]"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            color: 'var(--color-text-secondary)',
-            border: '1px solid var(--color-border)',
-          }}
-          onClick={onNext}
-        >
-          Изменить
-        </button>
-        <button
-          className="flex-1 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{
-            backgroundColor: 'var(--color-primary)',
-            color: '#FFFFFF',
-            boxShadow: '0 4px 12px rgba(91, 138, 114, 0.3)',
-          }}
-          onClick={onNext}
-        >
-          <Check size={20} weight="bold" /> Верно
-        </button>
-      </div>
+          <div className="mt-10 w-full flex gap-3">
+            <button
+              className="flex-1 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-border)',
+              }}
+              onClick={() => setEditing(true)}
+            >
+              <PencilSimple size={18} /> Изменить
+            </button>
+            <button
+              className="flex-1 py-4 rounded-2xl text-base font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 12px rgba(91, 138, 114, 0.3)',
+              }}
+              onClick={onNext}
+            >
+              <Check size={20} weight="bold" /> Верно
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

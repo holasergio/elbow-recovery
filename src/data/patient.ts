@@ -13,10 +13,26 @@ export const patient = {
 } as const
 
 /**
+ * Returns the effective surgery date: user-overridden (from store) or default from patient.
+ */
+export function getEffectiveSurgeryDate(): string {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('elbow-recovery-settings')
+      if (raw) {
+        const parsed = JSON.parse(raw) as { state?: { surgeryDate?: string | null } }
+        if (parsed.state?.surgeryDate) return parsed.state.surgeryDate
+      }
+    } catch { /* ignore */ }
+  }
+  return patient.surgeryDate
+}
+
+/**
  * Количество дней с момента операции
  */
 export function getDaysSinceSurgery(): number {
-  const surgery = new Date(patient.surgeryDate)
+  const surgery = new Date(getEffectiveSurgeryDate())
   const today = new Date()
   return Math.floor(
     (today.getTime() - surgery.getTime()) / (1000 * 60 * 60 * 24)

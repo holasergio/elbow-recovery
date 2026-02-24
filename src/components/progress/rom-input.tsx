@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { FloppyDisk, CheckCircle, Crosshair, Trophy, Target, ArrowUp } from '@phosphor-icons/react'
 import { db } from '@/lib/db'
 import { getCurrentPhase } from '@/data/patient'
@@ -64,6 +65,7 @@ function NumberField({ label, value, onChange, min, max }: NumberFieldProps) {
 }
 
 export function ROMInput() {
+  const router = useRouter()
   const [flexion, setFlexion] = useState(0)
   const [extensionDeficit, setExtensionDeficit] = useState(0)
   const [pronation, setPronation] = useState(0)
@@ -234,6 +236,54 @@ export function ROMInput() {
             </div>
           </div>
         )}
+
+        {/* Navigation actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          <button
+            onClick={() => router.push('/')}
+            style={{
+              width: '100%',
+              padding: '14px 0',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-primary)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 600,
+              fontSize: 'var(--text-base)',
+              cursor: 'pointer',
+            }}
+          >
+            На главную
+          </button>
+          <button
+            onClick={() => {
+              setFlexion(0)
+              setExtensionDeficit(0)
+              setPronation(0)
+              setSupination(0)
+              setMeasuredBy('self')
+              setPhotoFlexion(undefined)
+              setPhotoExtension(undefined)
+              setNotes('')
+              setAiFlexion(undefined)
+              setAiExtension(undefined)
+              setSaved(false)
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'transparent',
+              color: 'var(--color-text-muted)',
+              border: '1px solid var(--color-border)',
+              fontWeight: 500,
+              fontSize: 'var(--text-sm)',
+              cursor: 'pointer',
+            }}
+          >
+            Записать ещё замер
+          </button>
+        </div>
       </div>
     )
   }

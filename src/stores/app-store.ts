@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 interface AppState {
   theme: 'light' | 'dark' | 'system'
   onboardingDone: boolean
+  surgeryDate: string | null  // null = use default from patient.ts
   notificationsEnabled: boolean
   notificationCategories: {
     sessions: boolean
@@ -13,6 +14,7 @@ interface AppState {
   }
   setTheme: (theme: AppState['theme']) => void
   setOnboardingDone: () => void
+  setSurgeryDate: (date: string) => void
   setNotificationsEnabled: (enabled: boolean) => void
   toggleNotificationCategory: (cat: keyof AppState['notificationCategories']) => void
 }
@@ -22,6 +24,7 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       theme: 'system',
       onboardingDone: false,
+      surgeryDate: null,
       notificationsEnabled: false,
       notificationCategories: {
         sessions: true,
@@ -31,6 +34,7 @@ export const useAppStore = create<AppState>()(
       },
       setTheme: (theme) => set({ theme }),
       setOnboardingDone: () => set({ onboardingDone: true }),
+      setSurgeryDate: (date) => set({ surgeryDate: date }),
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
       toggleNotificationCategory: (cat) =>
         set((state) => ({

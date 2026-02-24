@@ -47,7 +47,8 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
   const [painAfter, setPainAfter] = useState<number | null>(null)
   const [showPainBefore, setShowPainBefore] = useState(false)
   const [showPainAfter, setShowPainAfter] = useState(false)
-  const painBeforeAskedRef = useRef(false)
+  // If session was restored mid-way, pain before was already asked
+  const painBeforeAskedRef = useRef(restored ? restored.currentStep > 0 : false)
 
   // Track timer elapsed for current step — updated by TimerDisplay via callback
   const timerElapsedRef = useRef<number>(restored?.timerElapsedSeconds ?? 0)
@@ -733,8 +734,8 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
               </button>
               <button
                 onClick={() => {
+                  // Pain remained — close dialog and stay on current step to repeat
                   setPainDialog(false)
-                  handleNextStep()
                 }}
                 style={{
                   padding: '14px',
