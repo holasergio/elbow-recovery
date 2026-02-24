@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Аналитика стоимости разработки — Elbow Recovery App</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #2d6a4f;
+      --green-lt:    #52b788;
+      --green-bg:    #d8f3dc;
+      --accent:      #f4a261;
+      --accent-dk:   #e76f51;
+      --blue:        #457b9d;
+      --blue-lt:     #a8dadc;
+      --purple:      #6d3fa5;
+      --dark:        #1b1b2f;
+      --mid:         #3d3d5c;
+      --muted:       #6b7280;
+      --border:      #e5e7eb;
+      --bg:          #f9fafb;
+      --surface:     #ffffff;
+      --text:        #111827;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header ── */
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%);
+      color: #fff;
+      padding: 56px 40px 48px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px;
+      padding: 6px 18px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      color: var(--green-lt);
+    }
+    .hero h1 {
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 17px;
+      color: rgba(255,255,255,0.65);
+      max-width: 620px;
+      margin: 0 auto;
+    }
+    .hero-meta {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 36px;
+      flex-wrap: wrap;
+    }
+    .hero-meta-item {
+      text-align: center;
+    }
+    .hero-meta-item .val {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--green-lt);
+      display: block;
+    }
+    .hero-meta-item .lbl {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Sections ── */
+    .section {
+      margin-top: 56px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 22px;
+      border-radius: 2px;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+    .section-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      padding-left: 14px;
+    }
+
+    /* ── App Profile ── */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .profile-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .profile-card .icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .profile-card h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .profile-card p {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    .profile-card .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tag {
+      background: var(--green-bg);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 100px;
+    }
+    .tag.blue { background: #dbeafe; color: #1d4ed8; }
+    .tag.purple { background: #ede9fe; color: var(--purple); }
+    .tag.orange { background: #ffedd5; color: #c2410c; }
+
+    /* ── Work Estimate Table ── */
+    .estimate-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 15px;
+    }
+    .estimate-table thead tr {
+      background: var(--dark);
+      color: #fff;
+    }
+    .estimate-table th {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .estimate-table th:last-child { text-align: right; }
+    .estimate-table td {
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .estimate-table td:last-child { text-align: right; font-weight: 600; }
+    .estimate-table tr:last-child td { border-bottom: none; background: #f0fdf4; font-weight: 700; }
+    .estimate-table tr:hover td { background: #f9fafb; }
+
+    .hours-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .hours-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--green);
+      min-width: 4px;
+    }
+
+    /* ── Russia / Moscow ── */
+    .moscow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .price-card.featured {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px var(--green-bg);
+    }
+    .price-card .badge-feat {
+      position: absolute;
+      top: 0; right: 0;
+      background: var(--green);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 0 16px 0 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .price-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+    .price-card .rate {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .price-card .price-range {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+    .price-card .price-usd {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .price-card .deadline {
+      font-size: 14px;
+      color: var(--mid);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .price-card ul {
+      list-style: none;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .price-card ul li::before { content: '+ '; color: var(--green); font-weight: 700; }
+    .price-card ul li.minus::before { content: '− '; color: var(--accent-dk); }
+
+    /* ── World Map Section ── */
+    .world-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 15px;
+    }
+    .world-table thead tr { background: #1b1b2f; color: #fff; }
+    .world-table th { padding: 14px 18px; text-align: left; font-size: 13px; font-weight: 600; }
+    .world-table td { padding: 13px 18px; border-bottom: 1px solid var(--border); }
+    .world-table tr:last-child td { border-bottom: none; }
+    .world-table tr:hover td { background: #f9fafb; }
+    .world-table .flag { font-size: 20px; }
+    .region-name { font-weight: 600; }
+    .region-examples { font-size: 12px; color: var(--muted); }
+
+    .bar-cell { min-width: 180px; }
+    .bar-outer {
+      background: var(--border);
+      border-radius: 4px;
+      height: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bar-inner {
+      height: 100%;
+      border-radius: 4px;
+      position: absolute;
+      left: 0; top: 0;
+    }
+
+    .cost-range { font-weight: 700; white-space: nowrap; }
+    .time-range { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .rate-val { font-size: 13px; color: var(--blue); }
+
+    /* ── Chart: Visual comparison ── */
+    .chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    .chart-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .chart-row:last-child { margin-bottom: 0; }
+    .chart-label {
+      font-size: 13px;
+      font-weight: 500;
+      width: 200px;
+      flex-shrink: 0;
+      color: var(--mid);
+    }
+    .chart-label span { display: block; font-size: 11px; color: var(--muted); }
+    .chart-bar-outer {
+      flex: 1;
+      background: var(--bg);
+      border-radius: 6px;
+      height: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-bar-inner {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      transition: width 0.6s ease;
+    }
+    .chart-bar-inner.highlight { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    /* ── Insights ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .insight-card .num {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .insight-card .num.accent { color: var(--accent-dk); }
+    .insight-card .num.blue { color: var(--blue); }
+    .insight-card .num.purple { color: var(--purple); }
+    .insight-card h4 { font-size: 15px; font-weight: 600; color: var(--dark); margin-bottom: 6px; }
+    .insight-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* ── Hidden costs ── */
+    .hidden-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .hidden-card {
+      background: #fff8f1;
+      border: 1px solid #fed7aa;
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .hidden-card .icon { font-size: 24px; margin-bottom: 8px; display: block; }
+    .hidden-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--dark); }
+    .hidden-card p { font-size: 13px; color: var(--muted); }
+    .hidden-card .cost { font-weight: 700; color: var(--accent-dk); margin-top: 6px; font-size: 14px; }
+
+    /* ── Conclusion ── */
+    .conclusion {
+      background: linear-gradient(135deg, var(--dark), var(--mid));
+      border-radius: 20px;
+      padding: 40px;
+      color: #fff;
+      margin-top: 56px;
+    }
+    .conclusion h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--green-lt);
+    }
+    .conclusion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .conclusion-item h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+    }
+    .conclusion-item p {
+      font-size: 16px;
+      color: #fff;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .conclusion-item .big {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--green-lt);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 56px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+    }
+    .footer a { color: var(--green); text-decoration: none; }
+    .sources { margin-top: 10px; }
+
+    @media (max-width: 640px) {
+      .hero { padding: 40px 20px 36px; }
+      .container { padding: 0 16px; }
+      .chart-label { width: 130px; font-size: 12px; }
+      .estimate-table th, .estimate-table td { padding: 10px 14px; font-size: 13px; }
+      .world-table th, .world-table td { padding: 10px 12px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-badge">Аналитический отчёт · Февраль 2026</div>
+  <h1>Стоимость разработки<br>Elbow Recovery App</h1>
+  <p>Сравнение рынков: Москва vs. Мировые ставки<br>
+     PWA на Next.js 15 · React 19 · TypeScript · Dexie.js</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="val">385–515</span>
+      <span class="lbl">Расчётных часов</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="val">2–8 мес.</span>
+      <span class="lbl">Срок разработки</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="val">7 рынков</span>
+      <span class="lbl">Проанализировано</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="val">PWA</span>
+      <span class="lbl">Технология</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══ App Profile -->
+  <div class="section">
+    <div class="section-title">Профиль приложения</div>
+    <div class="section-sub">Что именно оцениваем — функциональный состав и технический стек</div>
+    <div class="profile-grid">
+      <div class="profile-card">
+        <div class="icon">⚙️</div>
+        <h4>Технологии</h4>
+        <p>Next.js 15 + React 19</p>
+        <div class="tags">
+          <span class="tag">TypeScript</span>
+          <span class="tag blue">Dexie.js</span>
+          <span class="tag blue">Zustand</span>
+          <span class="tag purple">Service Worker</span>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="icon">📱</div>
+        <h4>Тип приложения</h4>
+        <p>PWA (Progressive Web App)</p>
+        <div class="tags">
+          <span class="tag">Offline-first</span>
+          <span class="tag orange">Push уведомления</span>
+          <span class="tag blue">IndexedDB</span>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="icon">🏋️</div>
+        <h4>Ключевые функции</h4>
+        <div class="tags" style="margin-top:6px">
+          <span class="tag">5 типов сессий</span>
+          <span class="tag">Трекер боли</span>
+          <span class="tag">Трекер сна</span>
+          <span class="tag">ROM-измерения</span>
+          <span class="tag orange">32 добавки</span>
+          <span class="tag blue">Статистика</span>
+          <span class="tag purple">Onboarding</span>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="icon">🗄️</div>
+        <h4>Backend</h4>
+        <p>Нет (local-only)</p>
+        <div class="tags">
+          <span class="tag">Без сервера</span>
+          <span class="tag blue">IndexedDB</span>
+          <span class="tag orange">localhost</span>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="icon">👤</div>
+        <h4>Аудитория</h4>
+        <p>Персональное приложение реабилитации</p>
+        <div class="tags">
+          <span class="tag">Single-user</span>
+          <span class="tag blue">Health / Med</span>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="icon">📊</div>
+        <h4>Экраны / Страницы</h4>
+        <p>17 маршрутов</p>
+        <div class="tags">
+          <span class="tag">Dashboard</span>
+          <span class="tag blue">Health hub</span>
+          <span class="tag purple">Progress</span>
+          <span class="tag orange">Settings</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Work Estimate -->
+  <div class="section">
+    <div class="section-title">Оценка объёма работ</div>
+    <div class="section-sub">Разбивка по блокам — основа для расчёта стоимости</div>
+    <table class="estimate-table">
+      <thead>
+        <tr>
+          <th>Блок работ</th>
+          <th>Описание</th>
+          <th style="text-align:right">Часов</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>🎨 UX/UI дизайн</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:80px"></div>Wireframes, hi-fi, design system</div></td>
+          <td>60–80</td>
+        </tr>
+        <tr>
+          <td>🏗️ PWA-инфраструктура</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:30px"></div>Service Worker, manifest, offline, push</div></td>
+          <td>25–35</td>
+        </tr>
+        <tr>
+          <td>💾 База данных</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:22px"></div>Dexie схема, миграции, хуки</div></td>
+          <td>20–25</td>
+        </tr>
+        <tr>
+          <td>🏋️ Сессии упражнений</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:85px"></div>Session runner, шаги, таймер, диалоги боли</div></td>
+          <td>65–85</td>
+        </tr>
+        <tr>
+          <td>🏠 Dashboard</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:38px"></div>Главная, пропущенные, стрик, карточки</div></td>
+          <td>30–40</td>
+        </tr>
+        <tr>
+          <td>❤️ Health-трекинг</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:62px"></div>Сон, боль, добавки, ROM, календарь</div></td>
+          <td>50–65</td>
+        </tr>
+        <tr>
+          <td>📈 Прогресс и статистика</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:48px"></div>ROM-графики, недельные инсайты, история</div></td>
+          <td>40–55</td>
+        </tr>
+        <tr>
+          <td>🔔 Push-уведомления</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:28px"></div>Планировщик, разрешения, SW-интеграция</div></td>
+          <td>25–35</td>
+        </tr>
+        <tr>
+          <td>🚀 Onboarding + настройки</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:22px"></div>3-шаговый онбординг, тема, дата операции</div></td>
+          <td>20–25</td>
+        </tr>
+        <tr>
+          <td>🧪 QA, баги, полировка</td>
+          <td><div class="hours-bar-wrap"><div class="hours-bar" style="width:62px"></div>Ручное тестирование, кроссплатформа, хотфиксы</div></td>
+          <td>50–70</td>
+        </tr>
+        <tr style="background:#f0fdf4; font-weight:700">
+          <td>ИТОГО</td>
+          <td></td>
+          <td>385–515 часов</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ Moscow Pricing -->
+  <div class="section">
+    <div class="section-title">Москва — ценовые сегменты</div>
+    <div class="section-sub">Три формата разработки с реальными диапазонами по состоянию на 2026 год</div>
+    <div class="moscow-grid">
+
+      <div class="price-card">
+        <h3>Фриланс</h3>
+        <div class="rate">1 500 – 2 500 ₽/час · 1 разработчик</div>
+        <div class="price-range">600 000 – 1 300 000 ₽</div>
+        <div class="price-usd">≈ $6 500 – $14 000</div>
+        <div class="deadline">⏱ 4–8 месяцев</div>
+        <ul>
+          <li>Минимальные накладные расходы</li>
+          <li>Гибкий стек технологий</li>
+          <li class="minus">Нет PM — сроки плавают</li>
+          <li class="minus">Нет выделенного QA</li>
+          <li class="minus">Риск замены разработчика</li>
+        </ul>
+      </div>
+
+      <div class="price-card featured">
+        <div class="badge-feat">Оптимально</div>
+        <h3>Небольшая студия</h3>
+        <div class="rate">2 500 – 4 000 ₽/час · 3–4 чел.</div>
+        <div class="price-range">1 000 000 – 2 000 000 ₽</div>
+        <div class="price-usd">≈ $11 000 – $22 000</div>
+        <div class="deadline">⏱ 3–5 месяцев</div>
+        <ul>
+          <li>PM включён в стоимость</li>
+          <li>Дизайнер в команде</li>
+          <li>Базовое QA-покрытие</li>
+          <li>Фиксированные спринты</li>
+          <li class="minus">Меньше senior-экспертизы</li>
+        </ul>
+      </div>
+
+      <div class="price-card">
+        <h3>Крупная студия / агентство</h3>
+        <div class="rate">4 000 – 7 000 ₽/час · 5–8 чел.</div>
+        <div class="price-range">1 500 000 – 3 600 000 ₽</div>
+        <div class="price-usd">≈ $17 000 – $39 000</div>
+        <div class="deadline">⏱ 2–4 месяца</div>
+        <ul>
+          <li>Senior team, строгий процесс</li>
+          <li>UX-исследование включено</li>
+          <li>Автотесты + CI/CD</li>
+          <li>SLA на поддержку</li>
+          <li class="minus">Overhead 30–40% бюджета</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ World Comparison -->
+  <div class="section">
+    <div class="section-title">Мировые ставки — полное сравнение</div>
+    <div class="section-sub">Ставки разработчиков и итоговая стоимость аналогичного проекта (385–515 ч.)</div>
+    <table class="world-table">
+      <thead>
+        <tr>
+          <th>Регион</th>
+          <th>Ставка / час</th>
+          <th>Стоимость проекта</th>
+          <th class="bar-cell">Относительно</th>
+          <th>Срок</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="flag">🇺🇸</span>
+            <span class="region-name"> США / Канада</span><br>
+            <span class="region-examples">NY, SF, Toronto</span>
+          </td>
+          <td class="rate-val">$100–$200/ч</td>
+          <td class="cost-range" style="color:#c2410c">$40 000 – $103 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:100%;background:#ef4444"></div>
+            </div>
+          </td>
+          <td class="time-range">3–5 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇩🇪</span>
+            <span class="region-name"> Западная Европа</span><br>
+            <span class="region-examples">Германия, Нидерланды, Франция</span>
+          </td>
+          <td class="rate-val">$70–$130/ч</td>
+          <td class="cost-range" style="color:#ea580c">$27 000 – $67 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:70%;background:#f97316"></div>
+            </div>
+          </td>
+          <td class="time-range">3–5 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇦🇺</span>
+            <span class="region-name"> Австралия / НЗ</span><br>
+            <span class="region-examples">Sydney, Melbourne, Auckland</span>
+          </td>
+          <td class="rate-val">$80–$150/ч</td>
+          <td class="cost-range" style="color:#d97706">$31 000 – $77 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:75%;background:#f59e0b"></div>
+            </div>
+          </td>
+          <td class="time-range">3–5 мес.</td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td>
+            <span class="flag">🇷🇺</span>
+            <span class="region-name"> Россия / Москва</span><br>
+            <span class="region-examples">Студия · 2 500–4 000 ₽/ч</span>
+          </td>
+          <td class="rate-val">$28–$45/ч</td>
+          <td class="cost-range" style="color:#16a34a">$11 000 – $22 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:28%;background:#22c55e;outline:2px solid #16a34a;outline-offset:2px;border-radius:4px"></div>
+            </div>
+          </td>
+          <td class="time-range">3–5 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇵🇱</span>
+            <span class="region-name"> Восточная Европа</span><br>
+            <span class="region-examples">Польша, Румыния, Чехия</span>
+          </td>
+          <td class="rate-val">$40–$80/ч</td>
+          <td class="cost-range" style="color:#0369a1">$15 000 – $41 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:38%;background:#3b82f6"></div>
+            </div>
+          </td>
+          <td class="time-range">3–4 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇧🇷</span>
+            <span class="region-name"> Латинская Америка</span><br>
+            <span class="region-examples">Бразилия, Аргентина, Мексика</span>
+          </td>
+          <td class="rate-val">$35–$70/ч</td>
+          <td class="cost-range" style="color:#7c3aed">$13 000 – $36 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:32%;background:#8b5cf6"></div>
+            </div>
+          </td>
+          <td class="time-range">3–5 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇻🇳</span>
+            <span class="region-name"> Юго-Восточная Азия</span><br>
+            <span class="region-examples">Вьетнам, Таиланд, Индонезия</span>
+          </td>
+          <td class="rate-val">$20–$40/ч</td>
+          <td class="cost-range" style="color:#0891b2">$8 000 – $21 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:20%;background:#06b6d4"></div>
+            </div>
+          </td>
+          <td class="time-range">4–6 мес.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="flag">🇮🇳</span>
+            <span class="region-name"> Индия</span><br>
+            <span class="region-examples">Бангалор, Пуна, Хайдарабад</span>
+          </td>
+          <td class="rate-val">$15–$35/ч</td>
+          <td class="cost-range" style="color:#6b7280">$6 000 – $18 000</td>
+          <td class="bar-cell">
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:14%;background:#9ca3af"></div>
+            </div>
+          </td>
+          <td class="time-range">4–7 мес.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ Visual Bar Chart -->
+  <div class="section">
+    <div class="section-title">Визуальное сравнение бюджетов</div>
+    <div class="section-sub">Типичная стоимость аналогичного проекта (медиана диапазона, USD)</div>
+    <div class="chart-wrap">
+
+      <div class="chart-row">
+        <div class="chart-label">🇺🇸 США / Канада<span>Senior studio</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:100%;background:linear-gradient(90deg,#ef4444,#dc2626)">$71 500</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇦🇺 Австралия / НЗ<span>Studio</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:75%;background:linear-gradient(90deg,#f97316,#ea580c)">$54 000</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇩🇪 Западная Европа<span>Studio / Agency</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:66%;background:linear-gradient(90deg,#f59e0b,#d97706)">$47 000</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇵🇱 Восточная Европа<span>Studio</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:39%;background:linear-gradient(90deg,#3b82f6,#1d4ed8)">$28 000</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇧🇷 Латинская Америка<span>Agency</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:35%;background:linear-gradient(90deg,#8b5cf6,#6d28d9)">$24 500</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇷🇺 Москва — студия ←<span>★ Текущий рынок</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner highlight" style="width:23%;background:linear-gradient(90deg,#22c55e,#16a34a)">$16 500</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇻🇳 Юго-Восточная Азия<span>Studio / Offshore</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:20%;background:linear-gradient(90deg,#06b6d4,#0284c7)">$14 500</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇷🇺 Москва — фриланс<span>1 разработчик</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:16%;background:linear-gradient(90deg,#10b981,#059669)">$11 000</div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">🇮🇳 Индия<span>Offshore studio</span></div>
+        <div class="chart-bar-outer">
+          <div class="chart-bar-inner" style="width:13%;background:linear-gradient(90deg,#9ca3af,#6b7280)">$12 000</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ Key Insights -->
+  <div class="section">
+    <div class="section-title">Ключевые инсайты</div>
+    <div class="section-sub">Цифры, которые определяют выбор стратегии</div>
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="num">2×</div>
+        <h4>PWA дешевле нативного</h4>
+        <p>Нативная разработка iOS + Android (Swift + Kotlin) для того же функционала обошлась бы в 1,5–2× дороже при том же качестве UX</p>
+      </div>
+      <div class="insight-card">
+        <div class="num accent">40%</div>
+        <h4>Экономия без backend</h4>
+        <p>Добавление серверной части — API, авторизация, синхронизация — увеличило бы бюджет на 40–70%. Локальное хранилище сэкономило значительную сумму</p>
+      </div>
+      <div class="insight-card">
+        <div class="num blue">3×</div>
+        <h4>Разброс по Москве</h4>
+        <p>Фриланс vs крупная студия — разница до 3× при сопоставимом конечном результате. Средняя студия — оптимальный баланс</p>
+      </div>
+      <div class="insight-card">
+        <div class="num purple">23%</div>
+        <h4>Москва vs США</h4>
+        <p>Московская студия обходится в 23–30% от стоимости американского агентства при сопоставимой технической экспертизе</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Hidden Costs -->
+  <div class="section">
+    <div class="section-title">Скрытые статьи бюджета</div>
+    <div class="section-sub">Часто не входят в первичную смету, но реальны</div>
+    <div class="hidden-grid">
+      <div class="hidden-card">
+        <span class="icon">🎨</span>
+        <h4>Дизайн-система / Брендинг</h4>
+        <p>Иконки, типографика, токены, гайды</p>
+        <div class="cost">+150 000 – 300 000 ₽</div>
+      </div>
+      <div class="hidden-card">
+        <span class="icon">☁️</span>
+        <h4>Хостинг PWA</h4>
+        <p>Vercel / VPS. PWA значительно дешевле нативных</p>
+        <div class="cost">0 – 3 000 ₽/мес.</div>
+      </div>
+      <div class="hidden-card">
+        <span class="icon">🔔</span>
+        <h4>Push-сервер (если внешний)</h4>
+        <p>Firebase FCM — бесплатно. Собственный — от 5 000 ₽/мес.</p>
+        <div class="cost">0 – 60 000 ₽/год</div>
+      </div>
+      <div class="hidden-card">
+        <span class="icon">🧪</span>
+        <h4>QA / Регрессионные тесты</h4>
+        <p>Если не включены в контракт</p>
+        <div class="cost">+10–15% бюджета</div>
+      </div>
+      <div class="hidden-card">
+        <span class="icon">🔧</span>
+        <h4>Поддержка и обновления</h4>
+        <p>Хотфиксы, обновление зависимостей, новые фичи</p>
+        <div class="cost">15–20% бюджета/год</div>
+      </div>
+      <div class="hidden-card">
+        <span class="icon">📱</span>
+        <h4>App Store / Play Store</h4>
+        <p>Только если нативная обёртка (Capacitor/Expo)</p>
+        <div class="cost">$99–$300/год</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Conclusion -->
+  <div class="conclusion">
+    <h2>Итоговая оценка для Elbow Recovery</h2>
+    <div class="conclusion-grid">
+      <div class="conclusion-item">
+        <h4>Фриланс (MVP)</h4>
+        <p class="big">600 000 – 900 000 ₽</p>
+        <p>1 опытный разработчик, без PM и дизайнера</p>
+      </div>
+      <div class="conclusion-item">
+        <h4>Студия (рекомендуется)</h4>
+        <p class="big">1 500 000 – 2 200 000 ₽</p>
+        <p>PM + дизайнер + разработчик + QA, фиксированные сроки</p>
+      </div>
+      <div class="conclusion-item">
+        <h4>Крупное агентство</h4>
+        <p class="big">2 500 000 – 3 600 000 ₽</p>
+        <p>Senior-команда, UX-исследование, CI/CD, SLA</p>
+      </div>
+      <div class="conclusion-item">
+        <h4>Аналоги в мире</h4>
+        <p class="big">$6k – $100k+</p>
+        <p>В зависимости от региона и модели работы</p>
+      </div>
+    </div>
+    <p style="margin-top:28px; color:rgba(255,255,255,0.5); font-size:13px; line-height:1.6">
+      * Оценки актуальны на февраль 2026. Стоимость без учёта backend-разработки (добавит 40–70%).
+        PWA-стек (Next.js + Dexie) снизил бюджет примерно вдвое по сравнению с нативными приложениями.
+    </p>
+  </div>
+
+</div>
+
+<!-- ══ Footer -->
+<div class="container">
+  <div class="footer">
+    <strong>Elbow Recovery App — Аналитический отчёт по стоимости разработки · Февраль 2026</strong>
+    <div class="sources" style="margin-top:12px; text-align:left; line-height:2">
+      <strong>Источники:</strong><br>
+      <a href="https://appcraft.pro/blog/stoimost-razrabotki-prilozheniya/">AppCraft — Стоимость разработки 2026</a> ·
+      <a href="https://blog.yusmpgroup.ru/stoimost-razrabotki-mobilnogo-prilozheniya-v-2026-godu-dlya-ios-i-android">YuSMP Group — Цены 2026</a> ·
+      <a href="https://www.purrweb.com/ru/blog/skolko-stoit-razrabotka-prilozheniya/">Purrweb — Стоимость приложения</a> ·
+      <a href="https://appinventiv.com/blog/react-native-app-development-cost/">Appinventiv — React Native Cost</a> ·
+      <a href="https://topflightapps.com/ideas/fitness-app-development-cost/">TopFlightApps — Fitness App Cost 2026</a> ·
+      <a href="https://www.index.dev/blog/freelance-developer-rates-by-country">Index.dev — Developer Rates by Country</a> ·
+      <a href="https://distantjob.com/blog/offshore-software-development-rates-by-country-2025/">DistantJob — Offshore Rates 2025</a> ·
+      <a href="https://arc.dev/freelance-developer-rates/mobile-app-development">Arc.dev — Mobile Dev Rates 2026</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

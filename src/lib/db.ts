@@ -94,6 +94,24 @@ export interface SkippedSession {
   skippedAt: string; // ISO 8601
 }
 
+export interface MoodEntry {
+  id?: number;
+  date: string; // YYYY-MM-DD
+  mood: number; // 1–5 (1=very bad, 5=great)
+  energy: number; // 1–5
+  note?: string;
+  createdAt: string; // ISO 8601
+}
+
+export interface JournalEntry {
+  id?: number;
+  date: string; // YYYY-MM-DD
+  title?: string;
+  content: string;
+  tags: string[];
+  createdAt: string; // ISO 8601
+}
+
 // ─── Database ────────────────────────────────────────────────────────
 
 class RecoveryDatabase extends Dexie {
@@ -105,6 +123,8 @@ class RecoveryDatabase extends Dexie {
   appointments!: EntityTable<Appointment, 'id'>;
   dailyLogs!: EntityTable<DailyLog, 'id'>;
   skippedSessions!: Table<SkippedSession>;
+  moodEntries!: EntityTable<MoodEntry, 'id'>;
+  journalEntries!: EntityTable<JournalEntry, 'id'>;
 
   constructor() {
     super('RecoveryDB');
@@ -128,6 +148,19 @@ class RecoveryDatabase extends Dexie {
       appointments: '++id, date, type',
       dailyLogs: '++id, &date',
       skippedSessions: '++id, date, sessionSlot',
+    });
+
+    this.version(3).stores({
+      exerciseSessions: '++id, date, exerciseId, sessionSlot, [date+sessionSlot]',
+      romMeasurements: '++id, date',
+      painEntries: '++id, date',
+      supplementLogs: '++id, date, supplementId, [date+slot]',
+      sleepLogs: '++id, &date',
+      appointments: '++id, date, type',
+      dailyLogs: '++id, &date',
+      skippedSessions: '++id, date, sessionSlot',
+      moodEntries: '++id, &date',
+      journalEntries: '++id, date',
     });
   }
 }

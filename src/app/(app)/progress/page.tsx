@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChartLine, Plus, ClockCounterClockwise, Target, Moon, Heartbeat, TrendUp, TrendDown } from '@phosphor-icons/react'
+import { ChartLine, Plus, ClockCounterClockwise, Target, Moon, Heartbeat, TrendUp, TrendDown, FileText } from '@phosphor-icons/react'
 import { ROMChart } from '@/components/progress/rom-chart'
 import { StreakCalendar } from '@/components/progress/streak-calendar'
 import { useROMHistory } from '@/hooks/use-rom'
@@ -454,6 +454,29 @@ export default function ProgressPage() {
           История
         </Link>
       </div>
+
+      {/* Doctor report link */}
+      <Link
+        href="/progress/report"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 16px', marginTop: 12,
+          borderRadius: 'var(--radius-lg)',
+          backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--color-primary) 15%, transparent)',
+          textDecoration: 'none', color: 'inherit',
+        }}
+      >
+        <FileText size={22} weight="duotone" style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--color-text)', display: 'block' }}>
+            Отчёт для врача
+          </span>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+            Сводка ROM, активности, боли для врача
+          </span>
+        </div>
+      </Link>
     </div>
   )
 }
