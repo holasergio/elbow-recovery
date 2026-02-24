@@ -3,7 +3,7 @@
 // Version is stamped at build time by scripts/stamp-sw.mjs
 // ──────────────────────────────────────────────
 
-const APP_VERSION = '20260223171626'
+const APP_VERSION = '20260224094858'
 const CACHE_NAME = `elbow-recovery-${APP_VERSION}`
 
 const PRECACHE_ASSETS = [
@@ -146,9 +146,25 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Message handler — skip waiting on demand from client
+// Message handler — skip waiting on demand, or show notification from page context
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting()
+    return
+  }
+
+  // Fallback notification: page sends this when new Notification() constructor fails
+  // (common in PWA mode on iOS and Android Chrome)
+  if (event.data?.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = event.data
+    event.waitUntil(
+      self.registration.showNotification(title, {
+        body: body || '',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: tag || 'elbow-recovery',
+        data: { url: '/' },
+      })
+    )
   }
 })

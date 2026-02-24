@@ -30,31 +30,55 @@ export function canNotify(): boolean {
 }
 
 /**
- * Show a browser notification. Falls back to service worker
- * notification if the Notification constructor throws
- * (some environments restrict direct construction).
+ * Show a browser notification.
+ *
+ * Strategy (most reliable first):
+ * 1. ServiceWorkerRegistration.showNotification() — works in PWA on iOS/Android
+ * 2. new Notification() — works in desktop Chrome/Firefox when SW is not available
+ * 3. postMessage to SW controller — last-resort fallback if SW not yet ready
+ *
+ * The old approach (new Notification first, postMessage fallback) failed because:
+ * - new Notification() is forbidden in PWA mode on iOS and Android Chrome
+ * - The SW only handled 'SKIP_WAITING' messages, not 'SHOW_NOTIFICATION'
  */
-export function showNotification(title: string, body: string, tag?: string) {
+export async function showNotification(title: string, body: string, tag?: string): Promise<void> {
   if (!canNotify()) return
 
-  try {
-    new Notification(title, {
-      body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-72.png',
-      tag: tag || 'elbow-recovery',
-      silent: false,
-    })
-  } catch {
-    // Fallback: try service worker notification
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title,
-        body,
-        tag,
-      })
+  const options: NotificationOptions = {
+    body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',  // badge-72.png does not exist → use existing icon
+    tag: tag || 'elbow-recovery',
+    silent: false,
+  }
+
+  // 1) Prefer SW registration.showNotification() — required for PWA on mobile
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready
+      await reg.showNotification(title, options)
+      return
+    } catch {
+      // SW not ready or showNotification unsupported — fall through
     }
+  }
+
+  // 2) Direct Notification constructor — works on desktop browsers
+  try {
+    new Notification(title, options)
+    return
+  } catch {
+    // Forbidden in some contexts (PWA foreground on some platforms) — fall through
+  }
+
+  // 3) Last resort: postMessage to active SW controller
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SHOW_NOTIFICATION',
+      title,
+      body,
+      tag,
+    })
   }
 }
 
