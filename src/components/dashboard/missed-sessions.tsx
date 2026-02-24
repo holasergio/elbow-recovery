@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { dailySessions, type DailySession } from '@/data/schedule'
-import { WarningCircle, Play, CaretDown, CaretUp, X } from '@phosphor-icons/react'
+import { WarningCircle, Play, CaretDown, CaretUp, X, ClockCounterClockwise } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
 import { haptic } from '@/lib/haptic'
 
@@ -22,6 +22,7 @@ export function MissedSessions() {
   const [open, setOpen] = useState(false)
   const [skipTarget, setSkipTarget] = useState<DailySession | null>(null)
   const [skipReason, setSkipReason] = useState<string | null>(null)
+  const [customReason, setCustomReason] = useState('')
   const today = new Date().toISOString().split('T')[0]
 
   const todaySessions = useLiveQuery(
@@ -47,25 +48,43 @@ export function MissedSessions() {
     })
   }, [todaySessions, skippedToday])
 
-  if (!missedSessions || missedSessions.length === 0) return null
+  // Skipped sessions with their DailySession metadata for display
+  const skippedSessionsDetails = useMemo(() => {
+    if (!skippedToday) return []
+    return skippedToday
+      .map(skip => ({
+        skip,
+        session: dailySessions.find(s => s.id === skip.sessionSlot),
+      }))
+      .filter((s): s is { skip: typeof skippedToday[number]; session: DailySession } => !!s.session)
+  }, [skippedToday])
+
+  if (missedSessions.length === 0 && skippedSessionsDetails.length === 0) return null
 
   const now = new Date()
 
   const handleSkipConfirm = async () => {
     if (!skipTarget || !skipReason) return
+    if (skipReason === 'Другое' && !customReason.trim()) return
     haptic('medium')
+    const finalReason = skipReason === 'Другое' ? customReason.trim() : skipReason
     await db.skippedSessions.add({
       sessionSlot: skipTarget.id,
       date: today,
-      reason: skipReason,
+      reason: finalReason,
       skippedAt: new Date().toISOString(),
     })
     setSkipTarget(null)
     setSkipReason(null)
+    setCustomReason('')
   }
+
+  const isConfirmDisabled = !skipReason || (skipReason === 'Другое' && !customReason.trim())
 
   return (
     <>
+      {/* ─── Пропущенные сессии (просрочены, не отмечены) ─── */}
+      {missedSessions.length > 0 && (
       <div style={{
         borderRadius: 'var(--radius-lg)',
         backgroundColor: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
@@ -147,7 +166,7 @@ export function MissedSessions() {
                       Начать
                     </button>
                     <button
-                      onClick={() => { haptic('light'); setSkipTarget(session); setSkipReason(null) }}
+                      onClick={() => { haptic('light'); setSkipTarget(session); setSkipReason(null); setCustomReason('') }}
                       style={{
                         padding: '6px 10px', borderRadius: 8,
                         backgroundColor: 'transparent',
@@ -164,6 +183,68 @@ export function MissedSessions() {
           </div>
         )}
       </div>
+      )}
+
+      {/* ─── Отложенные сессии (пропущены, можно начать) ─── */}
+      {skippedSessionsDetails.length > 0 && (
+        <div style={{
+          borderRadius: 'var(--radius-lg)',
+          backgroundColor: 'color-mix(in srgb, var(--color-secondary) 8%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)',
+          marginTop: '8px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '10px 16px',
+          }}>
+            <ClockCounterClockwise size={16} weight="duotone" style={{ color: 'var(--color-secondary)', flexShrink: 0 }} />
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-text)', flex: 1 }}>
+              {skippedSessionsDetails.length === 1
+                ? 'Отложена 1 сессия'
+                : `Отложено ${skippedSessionsDetails.length} сессии`}
+            </span>
+          </div>
+          <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {skippedSessionsDetails.map(({ skip, session }) => (
+              <div
+                key={skip.id ?? `${skip.sessionSlot}-${skip.date}`}
+                style={{
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, margin: 0, color: 'var(--color-text)' }}>
+                      {session.name} ({session.time})
+                    </p>
+                    {skip.reason && (
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                        Причина: {skip.reason}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => { haptic('medium'); router.push(`/session/${session.id}`) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '6px 10px', borderRadius: 8,
+                      backgroundColor: 'var(--color-secondary)', border: 'none',
+                      color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Play size={14} weight="fill" />
+                    Начать
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Skip reason bottom sheet */}
       {skipTarget && (
@@ -176,7 +257,7 @@ export function MissedSessions() {
             display: 'flex',
             alignItems: 'flex-end',
           }}
-          onClick={() => setSkipTarget(null)}
+          onClick={() => { setSkipTarget(null); setSkipReason(null); setCustomReason('') }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -202,7 +283,7 @@ export function MissedSessions() {
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0 }}>
                 Почему пропускаем?
               </h3>
-              <button onClick={() => setSkipTarget(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <button onClick={() => { setSkipTarget(null); setSkipReason(null); setCustomReason('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
                 <X size={20} style={{ color: 'var(--color-text-muted)' }} />
               </button>
             </div>
@@ -214,7 +295,7 @@ export function MissedSessions() {
               {SKIP_REASONS.map(reason => (
                 <button
                   key={reason}
-                  onClick={() => { haptic('light'); setSkipReason(reason) }}
+                  onClick={() => { haptic('light'); setSkipReason(reason); if (reason !== 'Другое') setCustomReason('') }}
                   style={{
                     padding: '12px 16px',
                     borderRadius: 10,
@@ -237,20 +318,44 @@ export function MissedSessions() {
               ))}
             </div>
 
+            {/* Free-text input for "Другое" */}
+            {skipReason === 'Другое' && (
+              <textarea
+                value={customReason}
+                onChange={e => setCustomReason(e.target.value)}
+                placeholder="Опишите причину..."
+                rows={3}
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface-alt)',
+                  color: 'var(--color-text)',
+                  fontSize: 'var(--text-sm)',
+                  fontFamily: 'inherit',
+                  resize: 'none',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            )}
+
             <button
               onClick={handleSkipConfirm}
-              disabled={!skipReason}
+              disabled={isConfirmDisabled}
               style={{
                 marginTop: 16,
                 width: '100%',
                 padding: '14px 0',
                 borderRadius: 12,
-                backgroundColor: skipReason ? 'var(--color-error)' : 'var(--color-border)',
-                color: skipReason ? '#fff' : 'var(--color-text-muted)',
+                backgroundColor: isConfirmDisabled ? 'var(--color-border)' : 'var(--color-error)',
+                color: isConfirmDisabled ? 'var(--color-text-muted)' : '#fff',
                 border: 'none',
                 fontWeight: 600,
                 fontSize: 'var(--text-base)',
-                cursor: skipReason ? 'pointer' : 'default',
+                cursor: isConfirmDisabled ? 'default' : 'pointer',
               }}
             >
               Пропустить сессию
