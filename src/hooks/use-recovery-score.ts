@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
 import { supplements } from '@/data/supplements'
+import { toLocalDateStr } from '@/lib/date-utils'
 
 export interface RecoveryScore {
   total: number           // 0-100
@@ -16,7 +17,7 @@ export interface RecoveryScore {
 }
 
 export function useRecoveryScore(): RecoveryScore {
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
 
   const sessionsToday = useLiveQuery(
     () => db.exerciseSessions.where('date').equals(today).toArray(),

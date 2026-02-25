@@ -55,6 +55,19 @@ export interface SupplementLog {
   skippedReason?: string;
 }
 
+export interface CustomSupplement {
+  id?: number
+  supplementId: string // e.g. 'custom_1707123456789'
+  name: string
+  dose: string
+  timing: string
+  slot: 'fasting' | 'breakfast' | 'lunch' | 'dinner' | 'bedtime'
+  priority: 1 | 2 | 3
+  category: 'mineral' | 'vitamin' | 'protein' | 'fatty_acid' | 'compound' | 'herb' | 'aminoacid'
+  reason: string
+  createdAt: string // ISO 8601
+}
+
 export interface SleepLog {
   id?: number;
   date: string; // YYYY-MM-DD
@@ -125,6 +138,7 @@ class RecoveryDatabase extends Dexie {
   skippedSessions!: Table<SkippedSession>;
   moodEntries!: EntityTable<MoodEntry, 'id'>;
   journalEntries!: EntityTable<JournalEntry, 'id'>;
+  customSupplements!: EntityTable<CustomSupplement, 'id'>;
 
   constructor() {
     super('RecoveryDB');
@@ -161,6 +175,20 @@ class RecoveryDatabase extends Dexie {
       skippedSessions: '++id, date, sessionSlot',
       moodEntries: '++id, &date',
       journalEntries: '++id, date',
+    });
+
+    this.version(4).stores({
+      exerciseSessions: '++id, date, exerciseId, sessionSlot, [date+sessionSlot]',
+      romMeasurements: '++id, date',
+      painEntries: '++id, date',
+      supplementLogs: '++id, date, supplementId, [date+slot]',
+      sleepLogs: '++id, &date',
+      appointments: '++id, date, type',
+      dailyLogs: '++id, &date',
+      skippedSessions: '++id, date, sessionSlot',
+      moodEntries: '++id, &date',
+      journalEntries: '++id, date',
+      customSupplements: '++id, &supplementId, slot',
     });
   }
 }

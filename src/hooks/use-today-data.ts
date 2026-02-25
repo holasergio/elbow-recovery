@@ -2,9 +2,10 @@
 
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
+import { toLocalDateStr } from '@/lib/date-utils'
 
 export function useTodayData() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
 
   const sessionsToday = useLiveQuery(
     () => db.exerciseSessions.where('date').equals(today).toArray(),

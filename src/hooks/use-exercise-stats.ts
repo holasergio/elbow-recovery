@@ -2,6 +2,7 @@
 
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
+import { toLocalDateStr } from '@/lib/date-utils'
 
 export function useExerciseStats(date: string) {
   const sessions = useLiveQuery(
@@ -22,6 +23,6 @@ export function useExerciseStats(date: string) {
 }
 
 export function useTodayStats() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
   return useExerciseStats(today)
 }

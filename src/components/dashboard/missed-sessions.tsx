@@ -7,6 +7,7 @@ import { dailySessions, type DailySession } from '@/data/schedule'
 import { WarningCircle, Play, CaretDown, CaretUp, X, ClockCounterClockwise } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
 import { haptic } from '@/lib/haptic'
+import { toLocalDateStr } from '@/lib/date-utils'
 
 const SKIP_REASONS = [
   'Боль/дискомфорт',
@@ -23,7 +24,7 @@ export function MissedSessions() {
   const [skipTarget, setSkipTarget] = useState<DailySession | null>(null)
   const [skipReason, setSkipReason] = useState<string | null>(null)
   const [customReason, setCustomReason] = useState('')
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
 
   const todaySessions = useLiveQuery(
     () => db.exerciseSessions.where('date').equals(today).toArray(),

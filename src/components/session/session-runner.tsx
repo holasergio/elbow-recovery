@@ -7,6 +7,7 @@ import { useWakeLock } from '@/hooks/use-wake-lock'
 import { dailySessions } from '@/data/schedule'
 import { exercises } from '@/data/exercises'
 import { db } from '@/lib/db'
+import { toLocalDateStr } from '@/lib/date-utils'
 import {
   saveSessionState,
   loadSessionState,
@@ -173,7 +174,7 @@ export function SessionRunner({ sessionId }: SessionRunnerProps) {
 
   const handleCompleteSession = async (painAfterVal?: number) => {
     // Save individual exercise completions to DB
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateStr()
     const completedAt = new Date().toISOString()
     const exerciseSteps = session.steps.filter(s => s.exerciseId)
 

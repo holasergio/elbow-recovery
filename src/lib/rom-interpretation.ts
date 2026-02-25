@@ -27,6 +27,10 @@ export function interpretROM(
   targetMax: number,
   previousArc?: number,
 ): ROMInterpretation {
+  // Guard against invalid values
+  if (isNaN(arc) || arc < 0) arc = 0
+  if (arc > 180) arc = 180
+
   const canDo = MILESTONES.filter(m => m.angle <= arc).map(m => m.label)
   const cantYet = MILESTONES.filter(m => m.angle > arc).map(m => `${m.label} (нужно ${m.angle}°)`)
   const nextMilestone = MILESTONES.find(m => m.angle > arc)

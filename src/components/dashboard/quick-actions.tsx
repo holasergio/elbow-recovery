@@ -35,15 +35,16 @@ export function QuickActions() {
         />
       )}
 
-      {/* Action buttons */}
+      {/* Action buttons — positioned above and to the left of FAB */}
       {open && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 16px)',
-          right: 16,
+          bottom: 'calc(80px + env(safe-area-inset-bottom, 0px) + 76px)',
+          right: 72,
           zIndex: 999,
           display: 'flex',
           flexDirection: 'column-reverse',
+          alignItems: 'flex-end',
           gap: 8,
           animation: 'slide-up 0.25s ease-out',
         }}>

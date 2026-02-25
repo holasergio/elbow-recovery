@@ -73,12 +73,17 @@ export function RecoveryForecast() {
             {forecast.weeklyGain > 0 ? `+${forecast.weeklyGain}` : '—'}
           </span>
           <p style={{ fontSize: 9, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>°/неделю</p>
+          {forecast.weeklyGainCapped && (
+            <p style={{ fontSize: 8, color: 'var(--color-text-muted)', margin: '1px 0 0', opacity: 0.65 }}>≤ физ. макс</p>
+          )}
         </div>
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>
             {forecast.projectedArc !== null ? `${forecast.projectedArc}°` : '—'}
           </span>
-          <p style={{ fontSize: 9, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>через 4 нед.</p>
+          <p style={{ fontSize: 9, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+            {forecast.projectedCapped ? 'через 4 нед. (макс)' : 'через 4 нед.'}
+          </p>
         </div>
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-info)', fontFamily: 'var(--font-display)' }}>

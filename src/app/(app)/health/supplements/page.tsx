@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Pill, ArrowLeft } from '@phosphor-icons/react'
+import { Pill, ArrowLeft, Plus } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
-import { supplements, slotLabels } from '@/data/supplements'
+import { supplements, slotLabels, type Supplement } from '@/data/supplements'
 import { SupplementChecklist } from '@/components/health/supplement-checklist'
+import { AddSupplementModal } from '@/components/health/add-supplement-modal'
 import { MonthCalendar, type CalendarDay } from '@/components/health/month-calendar'
 
 export default function SupplementsPage() {
@@ -18,9 +19,32 @@ export default function SupplementsPage() {
   })
 
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const allSupplementLogs = useLiveQuery(() => db.supplementLogs.orderBy('date').toArray(), []) ?? []
+  const customDefs = useLiveQuery(async () => {
+    try {
+      return await db.customSupplements.orderBy('supplementId').toArray()
+    } catch {
+      return []
+    }
+  }, []) ?? []
 
-  const TOTAL_DAILY_SUPPLEMENTS = supplements.length // 16
+  const allSupplementDefs: Supplement[] = useMemo(() => [
+    ...supplements,
+    ...customDefs.map((cs) => ({
+      id: cs.supplementId,
+      name: cs.name,
+      dose: cs.dose,
+      timing: cs.timing,
+      slot: cs.slot,
+      priority: cs.priority,
+      category: cs.category,
+      reason: cs.reason,
+      roleDetailed: cs.reason,
+    } as Supplement)),
+  ], [customDefs])
+
+  const TOTAL_DAILY_SUPPLEMENTS = allSupplementDefs.length
 
   const supplementCalendarDays = useMemo((): CalendarDay[] => {
     const byDate = new Map<string, { taken: number }>()
@@ -48,7 +72,7 @@ export default function SupplementsPage() {
   ) ?? []
 
   return (
-    <div style={{ paddingTop: '24px', paddingBottom: '32px' }}>
+    <div style={{ paddingTop: '24px', paddingBottom: '80px' }}>
       {/* Back link */}
       <Link
         href="/health"
@@ -66,31 +90,53 @@ export default function SupplementsPage() {
         Здоровье
       </Link>
 
-      {/* Title */}
+      {/* Title + Add button */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          justifyContent: 'space-between',
           marginBottom: '4px',
         }}
       >
-        <Pill
-          size={28}
-          weight="duotone"
-          style={{ color: 'var(--color-primary)' }}
-        />
-        <h1
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Pill
+            size={28}
+            weight="duotone"
+            style={{ color: 'var(--color-primary)' }}
+          />
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-3xl)',
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              margin: 0,
+            }}
+          >
+            Добавки
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          aria-label="Добавить добавку"
           style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-3xl)',
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: 'var(--color-primary)',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            flexShrink: 0,
           }}
         >
-          Добавки
-        </h1>
+          <Plus size={18} weight="bold" />
+        </button>
       </div>
 
       {/* Date */}
@@ -118,7 +164,7 @@ export default function SupplementsPage() {
             {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
             {' — '}{selectedDateLogs.filter(l => l.taken).length}/{TOTAL_DAILY_SUPPLEMENTS} принято
           </p>
-          {supplements.map(supplement => {
+          {allSupplementDefs.map(supplement => {
             const log = selectedDateLogs.find(l => l.supplementId === supplement.id)
             const taken = log?.taken ?? null // null = не залогировано
             return (
@@ -157,6 +203,10 @@ export default function SupplementsPage() {
 
       {/* Checklist */}
       <SupplementChecklist />
+
+      {showAddModal && (
+        <AddSupplementModal onClose={() => setShowAddModal(false)} />
+      )}
     </div>
   )
 }

@@ -3,20 +3,17 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
+import { toLocalDateStr, toLocalDateStrOffset } from '@/lib/date-utils'
 
 /**
  * Returns current active streak (consecutive days with >=1 session, ending today or yesterday)
  * and total sessions count.
  */
 export function useStreak() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
 
   // Query all sessions in last 120 days (wide window to catch long streaks)
-  const since = (() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 120)
-    return d.toISOString().split('T')[0]
-  })()
+  const since = toLocalDateStrOffset(-120)
 
   const sessions = useLiveQuery(
     () => db.exerciseSessions.where('date').between(since, today, true, true).toArray(),
@@ -36,9 +33,7 @@ export function useStreak() {
 
     let streak = 0
     for (let i = startOffset; i < 120; i++) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = toLocalDateStrOffset(-i)
       if (activeDates.has(dateStr)) {
         streak++
       } else {
@@ -47,11 +42,7 @@ export function useStreak() {
     }
 
     // Check if streak would have broken yesterday (no session) but today hasn't started yet
-    const yesterday = (() => {
-      const d = new Date()
-      d.setDate(d.getDate() - 1)
-      return d.toISOString().split('T')[0]
-    })()
+    const yesterday = toLocalDateStrOffset(-1)
     const hadYesterday = activeDates.has(yesterday)
     const hadToday = activeDates.has(today)
     const frozenYesterday = !hadYesterday && !hadToday && streak === 0

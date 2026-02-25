@@ -7,6 +7,7 @@ import { useTodayStats } from '@/hooks/use-exercise-stats'
 import { getExercisesForPhase, getExerciseById } from '@/data/exercises'
 import { getCurrentPhase } from '@/data/patient'
 import { Barbell, CheckCircle, CaretDown } from '@phosphor-icons/react'
+import { toLocalDateStr } from '@/lib/date-utils'
 
 interface CompletedExerciseInfo {
   exerciseId: string
@@ -23,7 +24,7 @@ export function TodayExercises() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownHeight, setDropdownHeight] = useState(0)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr()
   const todaySessions = useLiveQuery(
     () => db.exerciseSessions.where('date').equals(today).toArray(),
     [today]
@@ -68,7 +69,7 @@ export function TodayExercises() {
     }
 
     // Sort by last time descending (most recent first)
-    result.sort((a, b) => b.lastTime.localeCompare(a.lastTime))
+    result.sort((a, b) => (b.lastTime || '').localeCompare(a.lastTime || ''))
     return result
   }, [todaySessions])
 

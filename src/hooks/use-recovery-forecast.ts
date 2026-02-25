@@ -6,13 +6,19 @@ import { db } from '@/lib/db'
 import { getDaysSinceSurgery, getWeeksSinceSurgery } from '@/data/patient'
 import { phases } from '@/data/phases'
 
+// Физиологический максимум для пост-ORIF локтя: ~15°/нед (литература: Morrey 2000)
+const PHYS_MAX_WEEKLY_GAIN = 15
+
 export interface RecoveryForecast {
   currentArc: number | null
-  projectedArc: number | null     // projected arc in 4 weeks
-  weeklyGain: number              // avg degrees per week
+  projectedArc: number | null     // projected arc in 4 weeks (capped at 130°)
+  weeklyGain: number              // avg degrees per week (physiologically capped)
+  rawWeeklyGain: number           // uncapped raw calculation
+  weeklyGainCapped: boolean       // true when raw > PHYS_MAX
+  projectedCapped: boolean        // true when projection hit 130° ceiling
   normalArc: number               // 130 degrees (functional norm for ORIF)
-  weeksToFunctional: number | null // weeks until 100° arc (functional minimum)
-  weeksToNormal: number | null     // weeks until 130° arc
+  weeksToFunctional: number | null
+  weeksToNormal: number | null
   trajectory: 'ahead' | 'on_track' | 'behind' | 'unknown'
   phaseTarget: { min: number; max: number }
   isLoading: boolean
@@ -30,26 +36,54 @@ export function useRecoveryForecast(): RecoveryForecast {
     const phaseTarget = phase.romTarget
 
     if (!allROMs || allROMs.length === 0) {
-      return { currentArc: null, projectedArc: null, weeklyGain: 0, normalArc: 130, weeksToFunctional: null, weeksToNormal: null, trajectory: 'unknown', phaseTarget, isLoading: false }
+      return {
+        currentArc: null, projectedArc: null,
+        weeklyGain: 0, rawWeeklyGain: 0, weeklyGainCapped: false, projectedCapped: false,
+        normalArc: 130, weeksToFunctional: null, weeksToNormal: null,
+        trajectory: 'unknown', phaseTarget, isLoading: false,
+      }
     }
 
     const currentArc = allROMs[allROMs.length - 1].arc
 
-    // Calculate weekly gain from ROM history
-    let weeklyGain = 0
+    // Рассчитываем недельный прирост из истории замеров.
+    // Дуга (arc) = сгибание − дефицит разгибания.
+    // Предпочитаем последние 21 день для актуального тренда; расширяем до 60 дней при нехватке точек.
+    let rawWeeklyGain = 0
     if (allROMs.length >= 2) {
-      const first = allROMs[0]
       const last = allROMs[allROMs.length - 1]
-      const daysBetween = (new Date(last.date).getTime() - new Date(first.date).getTime()) / 86400000
-      if (daysBetween > 0) {
-        weeklyGain = Math.round(((last.arc - first.arc) / daysBetween) * 7 * 10) / 10
+      const lastDate = new Date(last.date).getTime()
+      const recentCutoff = lastDate - 21 * 86400000
+
+      let recentROMs = allROMs.filter(r => new Date(r.date).getTime() >= recentCutoff)
+      if (recentROMs.length < 2) {
+        const widerCutoff = lastDate - 60 * 86400000
+        recentROMs = allROMs.filter(r => new Date(r.date).getTime() >= widerCutoff)
+      }
+
+      if (recentROMs.length >= 2) {
+        const baseROM = recentROMs[0]
+        const daysBetween = (lastDate - new Date(baseROM.date).getTime()) / 86400000
+        if (daysBetween >= 3) {
+          rawWeeklyGain = Math.round(((last.arc - baseROM.arc) / daysBetween) * 7 * 10) / 10
+        }
       }
     }
 
-    // Project 4 weeks ahead
-    const projectedArc = weeklyGain > 0 ? Math.round(currentArc + weeklyGain * 4) : null
+    // Физиологический кап: post-ORIF локоть не может восстанавливаться быстрее ~15°/нед.
+    // Без капа единственный ранний замер (напр., 0° → 89° за 7 дней) даёт 89°/нед → прогноз 467°.
+    const weeklyGainCapped = rawWeeklyGain > PHYS_MAX_WEEKLY_GAIN
+    const weeklyGain = weeklyGainCapped
+      ? PHYS_MAX_WEEKLY_GAIN
+      : rawWeeklyGain
 
-    // Weeks to functional (100°) and normal (130°)
+    // Прогноз через 4 недели — кап на анатомическом максимуме 130°
+    const rawProjection = weeklyGain > 0 ? currentArc + weeklyGain * 4 : null
+    const projectedRaw = rawProjection !== null ? Math.round(rawProjection) : null
+    const projectedCapped = projectedRaw !== null && projectedRaw >= 130
+    const projectedArc = projectedRaw !== null ? Math.min(projectedRaw, 130) : null
+
+    // Недель до функциональной нормы (100°) и полной нормы (130°)
     const weeksToFunctional = currentArc < 100 && weeklyGain > 0
       ? Math.ceil((100 - currentArc) / weeklyGain)
       : currentArc >= 100 ? 0 : null
@@ -58,7 +92,6 @@ export function useRecoveryForecast(): RecoveryForecast {
       ? Math.ceil((130 - currentArc) / weeklyGain)
       : currentArc >= 130 ? 0 : null
 
-    // Determine trajectory vs phase target
     let trajectory: RecoveryForecast['trajectory'] = 'unknown'
     if (currentArc >= phaseTarget.max) {
       trajectory = 'ahead'
@@ -68,6 +101,11 @@ export function useRecoveryForecast(): RecoveryForecast {
       trajectory = 'behind'
     }
 
-    return { currentArc, projectedArc, weeklyGain, normalArc: 130, weeksToFunctional, weeksToNormal, trajectory, phaseTarget, isLoading: false }
+    return {
+      currentArc, projectedArc,
+      weeklyGain, rawWeeklyGain, weeklyGainCapped, projectedCapped,
+      normalArc: 130, weeksToFunctional, weeksToNormal,
+      trajectory, phaseTarget, isLoading: false,
+    }
   }, [allROMs, weeks])
 }

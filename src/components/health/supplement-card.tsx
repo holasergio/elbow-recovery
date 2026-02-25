@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, Circle, Info } from '@phosphor-icons/react'
+import { CheckCircle, Circle, Info, Trash, PencilSimple } from '@phosphor-icons/react'
 import type { Supplement, SupplementSlot } from '@/data/supplements'
 
 const priorityConfig: Record<
@@ -29,12 +29,18 @@ interface SupplementCardProps {
   supplement: Supplement
   taken: boolean
   onToggle: (supplementId: string, slot: SupplementSlot) => void
+  isCustom?: boolean
+  onDelete?: (supplementId: string) => void
+  onEdit?: () => void
 }
 
 export function SupplementCard({
   supplement,
   taken,
   onToggle,
+  isCustom = false,
+  onDelete,
+  onEdit,
 }: SupplementCardProps) {
   const [expanded, setExpanded] = useState(false)
   const priority = priorityConfig[supplement.priority]
@@ -64,11 +70,12 @@ export function SupplementCard({
       onKeyDown={handleKeyDown}
       onClick={handleToggle}
       style={{
+        position: 'relative',
         backgroundColor: 'var(--color-surface)',
         border: `1px solid ${taken ? 'var(--color-primary)' : 'var(--color-border)'}`,
         borderRadius: 'var(--radius-md)',
         boxShadow: 'var(--shadow-sm)',
-        padding: '14px 16px',
+        padding: isCustom ? '14px 70px 14px 16px' : '14px 16px',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
         opacity: taken ? 0.75 : 1,
@@ -77,6 +84,65 @@ export function SupplementCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        {/* Action buttons for custom supplements */}
+        {isCustom && (onEdit || onDelete) && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit() }}
+                aria-label="Редактировать добавку"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  padding: '4px',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.6,
+                }}
+              >
+                <PencilSimple size={15} weight="duotone" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (window.confirm(`Удалить «${supplement.name}»?`)) {
+                    onDelete(supplement.id)
+                  }
+                }}
+                aria-label="Удалить добавку"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  padding: '4px',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.6,
+                }}
+              >
+                <Trash size={15} weight="duotone" />
+              </button>
+            )}
+          </div>
+        )}
         {/* Checkbox icon */}
         <div
           style={{
