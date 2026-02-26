@@ -8,6 +8,7 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookieEncoding: 'raw',
     cookies: {
       getAll() {
         return cookieStore.getAll()
