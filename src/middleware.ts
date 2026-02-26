@@ -3,12 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/auth/callback', '/onboarding', '/offline']
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gzibkuxugnshhnoxklcf.supabase.co'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aWJrdXh1Z25zaGhub3hrbGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjA2NTAsImV4cCI6MjA4NzYzNjY1MH0.PNDok-S8FG9X76sam64s0tT2skCHPoe89-RZLuTYTC0'
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
