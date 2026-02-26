@@ -4,6 +4,7 @@ import StorageInit from "@/components/storage-init";
 import { ServiceWorkerProvider } from "@/components/sw-register";
 import { UpdatePrompt } from "@/components/update-prompt";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { SyncProvider } from "@/components/sync-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,7 +40,9 @@ export default function RootLayout({
         <ThemeProvider>
           <ServiceWorkerProvider>
             <StorageInit />
-            {children}
+            <SyncProvider>
+              {children}
+            </SyncProvider>
             <UpdatePrompt />
           </ServiceWorkerProvider>
         </ThemeProvider>
