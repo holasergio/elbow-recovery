@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elbow Recovery — Platform Strategy & GTM Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:          #06070b;
+  --bg-surface:  #0f1117;
+  --bg-elevated: #161921;
+  --bg-hover:    #1e2130;
+  --border:      #252836;
+  --border-light:#323648;
+  --text:        #e4e5ea;
+  --text-sec:    #9da1b3;
+  --text-muted:  #5f6478;
+  --primary:     #5B8A72;
+  --primary-l:   #72a68c;
+  --primary-d:   #3d6b54;
+  --primary-bg:  rgba(91,138,114,0.1);
+  --gold:        #d4a647;
+  --gold-bg:     rgba(212,166,71,0.1);
+  --red:         #d64545;
+  --red-bg:      rgba(214,69,69,0.08);
+  --blue:        #4d88cc;
+  --blue-bg:     rgba(77,136,204,0.1);
+  --purple:      #8b6cc1;
+  --purple-bg:   rgba(139,108,193,0.1);
+  --cyan:        #3db8b0;
+  --cyan-bg:     rgba(61,184,176,0.08);
+  --radius:      12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --font-d:      'Fraunces', Georgia, serif;
+  --font-b:      'Inter', -apple-system, sans-serif;
+  --sidebar-w:   260px;
+  --ease:        cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* ═══════════════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 15px;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--primary-l); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(91,138,114,0.3); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════════════════════════════════ */
+#progress {
+  position: fixed; top: 0; left: 0; height: 2px; z-index: 1000;
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
+  width: 0%; transition: width 0.1s linear;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════════════════════════ */
+#sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: rgba(15,17,23,0.85); backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-right: 1px solid var(--border);
+  padding: 32px 24px; z-index: 100;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: transform 0.4s var(--ease);
+}
+.sidebar-brand {
+  font-family: var(--font-d); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--primary-l); margin-bottom: 6px;
+}
+.sidebar-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 28px; letter-spacing: 0.03em; }
+.nav-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 400; color: var(--text-sec);
+  transition: all 0.2s ease; cursor: pointer; border: none; background: none; text-align: left; width: 100%;
+}
+.nav-link:hover { color: var(--text); background: var(--bg-hover); }
+.nav-link.active { color: var(--text); background: var(--primary-bg); font-weight: 500; }
+.nav-link.active .nav-num { color: var(--primary-l); }
+.nav-num { font-size: 11px; font-weight: 600; color: var(--text-muted); min-width: 20px; font-variant-numeric: tabular-nums; }
+.sidebar-footer {
+  margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted); line-height: 1.5;
+}
+
+/* Mobile toggle */
+#nav-toggle {
+  display: none; position: fixed; top: 16px; left: 16px; z-index: 200;
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+  background: rgba(15,17,23,0.9); backdrop-filter: blur(12px);
+  color: var(--text); font-size: 18px; cursor: pointer;
+  align-items: center; justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN
+   ═══════════════════════════════════════════════════════════════ */
+#main { margin-left: var(--sidebar-w); min-height: 100vh; }
+.section {
+  padding: 80px 60px; border-bottom: 1px solid var(--border);
+  max-width: 1100px; margin: 0 auto;
+  position: relative;
+}
+.section:last-child { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════════════════════════ */
+.section-num {
+  font-family: var(--font-d); font-size: 11px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-num::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.section-title {
+  font-family: var(--font-d); font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400; line-height: 1.2; margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--text-sec) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.section-desc { color: var(--text-sec); font-size: 15px; max-width: 600px; margin-bottom: 40px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; position: relative; overflow: hidden;
+  padding: 80px 60px;
+}
+#hero::before {
+  content: ''; position: absolute; top: -200px; right: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(91,138,114,0.12) 0%, transparent 70%);
+  animation: float 20s ease-in-out infinite;
+}
+#hero::after {
+  content: ''; position: absolute; bottom: -150px; left: -100px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(77,136,204,0.08) 0%, transparent 70%);
+  animation: float 25s ease-in-out infinite reverse;
+}
+@keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-20px); } }
+.hero-label {
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2em;
+  color: var(--primary); margin-bottom: 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.hero-label::before { content: ''; width: 24px; height: 2px; background: var(--primary); }
+.hero-title {
+  font-family: var(--font-d); font-size: clamp(36px, 6vw, 64px);
+  font-weight: 300; line-height: 1.15; margin-bottom: 20px; max-width: 800px;
+}
+.hero-title strong { font-weight: 700; color: var(--primary-l); }
+.hero-subtitle { color: var(--text-sec); font-size: 17px; max-width: 560px; margin-bottom: 48px; line-height: 1.7; }
+.hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 700px; }
+.stat-card {
+  padding: 24px 20px; border-radius: var(--radius-lg);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  text-align: center; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.stat-card[data-accent="green"]::before { background: var(--primary); }
+.stat-card[data-accent="blue"]::before { background: var(--blue); }
+.stat-card[data-accent="purple"]::before { background: var(--purple); }
+.stat-card[data-accent="red"]::before { background: var(--red); }
+.stat-num {
+  font-family: var(--font-d); font-size: 36px; font-weight: 600;
+  margin-bottom: 4px; font-variant-numeric: tabular-nums;
+}
+.stat-card[data-accent="green"] .stat-num { color: var(--primary-l); }
+.stat-card[data-accent="blue"] .stat-num { color: var(--blue); }
+.stat-card[data-accent="purple"] .stat-num { color: var(--purple); }
+.stat-card[data-accent="red"] .stat-num { color: var(--red); }
+.stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.hero-scroll {
+  position: absolute; bottom: 32px; left: 50%;
+  transform: translateX(-50%); text-align: center;
+  font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em;
+  animation: bounce 2s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS & GRIDS
+   ═══════════════════════════════════════════════════════════════ */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.card-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+.card {
+  padding: 24px; border-radius: var(--radius-lg);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  transition: border-color 0.2s, transform 0.2s var(--ease), box-shadow 0.2s;
+}
+.card:hover { border-color: var(--border-light); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.card-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 16px;
+}
+.card-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+.card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.6; }
+.card-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  margin-top: 12px;
+}
+.tag-green { background: var(--primary-bg); color: var(--primary-l); }
+.tag-red { background: var(--red-bg); color: var(--red); }
+.tag-blue { background: var(--blue-bg); color: var(--blue); }
+.tag-gold { background: var(--gold-bg); color: var(--gold); }
+.tag-purple { background: var(--purple-bg); color: var(--purple); }
+.tag-cyan { background: var(--cyan-bg); color: var(--cyan); }
+
+/* ═══════════════════════════════════════════════════════════════
+   INSIGHT CALLOUT
+   ═══════════════════════════════════════════════════════════════ */
+.insight {
+  padding: 20px 24px; border-radius: var(--radius);
+  border-left: 3px solid var(--primary);
+  background: var(--primary-bg); margin: 32px 0;
+  font-size: 14px; color: var(--text-sec); line-height: 1.7;
+}
+.insight strong { color: var(--text); }
+.insight.insight-red { border-left-color: var(--red); background: var(--red-bg); }
+.insight.insight-gold { border-left-color: var(--gold); background: var(--gold-bg); }
+.insight.insight-blue { border-left-color: var(--blue); background: var(--blue-bg); }
+
+/* ═══════════════════════════════════════════════════════════════
+   GAP SEVERITY
+   ═══════════════════════════════════════════════════════════════ */
+.gap-card { position: relative; padding-left: 52px; }
+.gap-severity {
+  position: absolute; left: 24px; top: 24px;
+  width: 16px; height: 16px; border-radius: 50%;
+}
+.severity-critical { background: var(--red); box-shadow: 0 0 12px rgba(214,69,69,0.4); }
+.severity-high { background: var(--gold); box-shadow: 0 0 12px rgba(212,166,71,0.3); }
+.severity-medium { background: var(--blue); box-shadow: 0 0 12px rgba(77,136,204,0.3); }
+
+/* ═══════════════════════════════════════════════════════════════
+   DATA TABLE
+   ═══════════════════════════════════════════════════════════════ */
+.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: var(--bg-surface); border-radius: var(--radius-lg);
+  overflow: hidden; border: 1px solid var(--border);
+}
+.data-table th {
+  padding: 14px 16px; text-align: left; font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+  background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dot-yes { background: var(--primary-l); box-shadow: 0 0 6px rgba(91,138,114,0.5); }
+.dot-no { background: var(--text-muted); opacity: 0.3; }
+.dot-partial { background: var(--gold); }
+.cell-center { text-align: center; }
+
+/* ═══════════════════════════════════════════════════════════════
+   WEARABLE CARDS
+   ═══════════════════════════════════════════════════════════════ */
+.wearable-card { position: relative; overflow: hidden; }
+.wearable-logo {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-weight: 700; font-size: 20px;
+  margin-bottom: 16px;
+}
+.wearable-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.wearable-meta-item {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  background: var(--bg-elevated); color: var(--text-sec);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIMELINE / ROADMAP
+   ═══════════════════════════════════════════════════════════════ */
+.timeline { position: relative; padding-left: 40px; }
+.timeline::before {
+  content: ''; position: absolute; left: 15px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(to bottom, var(--primary), var(--blue), var(--purple), var(--gold), var(--cyan));
+}
+.timeline-item { position: relative; margin-bottom: 40px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-dot {
+  position: absolute; left: -33px; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid; background: var(--bg);
+}
+.timeline-phase {
+  font-family: var(--font-d); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px;
+}
+.timeline-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.timeline-desc { font-size: 13px; color: var(--text-sec); line-height: 1.7; max-width: 600px; }
+.timeline-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.timeline-tag {
+  font-size: 11px; padding: 3px 10px; border-radius: 6px;
+  border: 1px solid var(--border); color: var(--text-sec);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MATRIX (EFFORT/IMPACT)
+   ═══════════════════════════════════════════════════════════════ */
+.matrix-container {
+  position: relative; width: 100%; aspect-ratio: 16/10;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.matrix-axis-x, .matrix-axis-y {
+  position: absolute; font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.matrix-axis-x { bottom: 12px; left: 50%; transform: translateX(-50%); }
+.matrix-axis-y { left: 12px; top: 50%; transform: rotate(-90deg) translateX(-50%); transform-origin: left center; }
+.matrix-quadrant {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text-muted); opacity: 0.5;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.matrix-line-h, .matrix-line-v {
+  position: absolute; background: var(--border);
+}
+.matrix-line-h { left: 0; right: 0; top: 50%; height: 1px; }
+.matrix-line-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+.matrix-item {
+  position: absolute; transform: translate(-50%, -50%);
+  padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 500;
+  white-space: nowrap; cursor: default;
+  border: 1px solid; transition: transform 0.2s, box-shadow 0.2s;
+}
+.matrix-item:hover { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 2; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TIER CARDS
+   ═══════════════════════════════════════════════════════════════ */
+.tier-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.tier-card {
+  padding: 28px 24px; border-radius: var(--radius-lg);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; transition: all 0.2s;
+}
+.tier-card.featured { border-color: var(--primary); background: linear-gradient(170deg, var(--primary-bg) 0%, var(--bg-surface) 50%); }
+.tier-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+.tier-price { font-family: var(--font-d); font-size: 32px; font-weight: 600; margin: 12px 0; }
+.tier-price span { font-size: 14px; font-weight: 400; color: var(--text-sec); }
+.tier-features { list-style: none; flex: 1; }
+.tier-features li {
+  padding: 8px 0; font-size: 13px; color: var(--text-sec);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; gap: 8px;
+}
+.tier-features li::before { content: '✓'; color: var(--primary-l); font-weight: 700; font-size: 12px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTION LIST
+   ═══════════════════════════════════════════════════════════════ */
+.action-list { display: flex; flex-direction: column; gap: 12px; }
+.action-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px; border-radius: var(--radius);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.action-item:hover { border-color: var(--border-light); }
+.action-rank {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-weight: 700; font-size: 14px;
+}
+.action-content { flex: 1; }
+.action-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.action-meta { font-size: 12px; color: var(--text-muted); }
+.action-effort {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MARKET BAR
+   ═══════════════════════════════════════════════════════════════ */
+.market-bar {
+  display: flex; align-items: center; gap: 20px;
+  padding: 24px; border-radius: var(--radius-lg);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  margin-top: 32px;
+}
+.market-bar-visual { flex: 1; height: 8px; border-radius: 4px; background: var(--bg-hover); position: relative; overflow: hidden; }
+.market-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--primary), var(--gold)); position: absolute; left: 0; top: 0; transition: width 1.5s var(--ease); }
+.market-label { font-size: 13px; white-space: nowrap; }
+.market-num { font-family: var(--font-d); font-weight: 700; font-size: 22px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPARISON VISUAL
+   ═══════════════════════════════════════════════════════════════ */
+.compare-grid { display: grid; grid-template-columns: 1fr 48px 1fr; gap: 0; align-items: start; }
+.compare-col { display: flex; flex-direction: column; gap: 8px; }
+.compare-header {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; padding: 12px 16px; text-align: center;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.compare-arrow {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding-top: 52px; gap: 25px; color: var(--text-muted);
+}
+.compare-arrow span { font-size: 16px; opacity: 0.4; }
+.compare-item {
+  padding: 10px 16px; font-size: 13px; border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL REVEAL ANIMATION
+   ═══════════════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.revealed { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: 0.06s; }
+.reveal-d2 { transition-delay: 0.12s; }
+.reveal-d3 { transition-delay: 0.18s; }
+.reveal-d4 { transition-delay: 0.24s; }
+.reveal-d5 { transition-delay: 0.3s; }
+.reveal-d6 { transition-delay: 0.36s; }
+.reveal-d7 { transition-delay: 0.42s; }
+.reveal-d8 { transition-delay: 0.48s; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DEVICE CARDS
+   ═══════════════════════════════════════════════════════════════ */
+.device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.device-card {
+  padding: 20px; border-radius: var(--radius);
+  background: var(--bg-surface); border: 1px solid var(--border);
+}
+.device-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.device-type { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.device-feature { font-size: 12px; color: var(--text-sec); padding: 3px 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   BLE WARNING
+   ═══════════════════════════════════════════════════════════════ */
+.ble-matrix {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px;
+}
+.ble-item {
+  padding: 16px; border-radius: var(--radius); text-align: center;
+  border: 1px solid var(--border); background: var(--bg-surface);
+}
+.ble-browser { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.ble-status { font-size: 12px; font-weight: 600; }
+.ble-ok { color: var(--primary-l); }
+.ble-no { color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   GTM — MARKET SIZING RINGS
+   ═══════════════════════════════════════════════════════════════ */
+.tam-rings { display: flex; align-items: center; justify-content: center; gap: 48px; margin: 40px 0; flex-wrap: wrap; }
+.tam-ring { position: relative; display: flex; flex-direction: column; align-items: center; }
+.tam-ring svg { transform: rotate(-90deg); }
+.tam-ring-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.tam-ring-value { font-family: var(--font-d); font-weight: 700; font-size: 24px; }
+.tam-ring-name { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.tam-ring-sub { font-size: 10px; color: var(--text-muted); margin-top: 12px; text-align: center; max-width: 140px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GTM — COMPETITOR CARDS
+   ═══════════════════════════════════════════════════════════════ */
+.comp-card { padding: 28px; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border); }
+.comp-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.comp-logo { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-weight: 700; font-size: 18px; color: #fff; flex-shrink: 0; }
+.comp-name { font-weight: 700; font-size: 18px; }
+.comp-tagline { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.comp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+.comp-stat { padding: 12px; border-radius: 8px; background: var(--bg-elevated); text-align: center; }
+.comp-stat-val { font-family: var(--font-d); font-weight: 700; font-size: 20px; }
+.comp-stat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.comp-desc { font-size: 13px; color: var(--text-sec); line-height: 1.7; }
+.comp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.comp-tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-sec); }
+
+/* ═══════════════════════════════════════════════════════════════
+   GTM — LANDSCAPE SCATTER
+   ═══════════════════════════════════════════════════════════════ */
+.landscape-container {
+  position: relative; width: 100%; aspect-ratio: 16/10;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.landscape-dot {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 10px; height: 10px; border-radius: 50%; border: 2px solid;
+  transition: all 0.3s var(--ease); cursor: default;
+}
+.landscape-dot:hover { transform: translate(-50%, -50%) scale(1.6); z-index: 3; }
+.landscape-label {
+  position: absolute; transform: translate(-50%, 8px);
+  font-size: 10px; font-weight: 500; white-space: nowrap;
+  pointer-events: none;
+}
+.landscape-us {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--primary);
+  background: var(--primary-bg); animation: pulse-ring 2s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(91,138,114,0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(91,138,114,0); }
+  100% { box-shadow: 0 0 0 0 rgba(91,138,114,0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GTM — UNIT ECONOMICS
+   ═══════════════════════════════════════════════════════════════ */
+.econ-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.econ-card { padding: 24px; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border); text-align: center; }
+.econ-val { font-family: var(--font-d); font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+.econ-lbl { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.econ-sub { font-size: 11px; color: var(--text-sec); margin-top: 8px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GTM — FUNNEL
+   ═══════════════════════════════════════════════════════════════ */
+.funnel { display: flex; flex-direction: column; gap: 4px; max-width: 700px; margin: 0 auto; }
+.funnel-step { display: flex; align-items: center; gap: 16px; padding: 14px 24px; border-radius: 8px; position: relative; }
+.funnel-step-name { font-weight: 600; font-size: 14px; min-width: 140px; }
+.funnel-bar { flex: 1; height: 28px; border-radius: 6px; position: relative; overflow: hidden; background: var(--bg-hover); }
+.funnel-fill { height: 100%; border-radius: 6px; transition: width 1.5s var(--ease); position: absolute; left: 0; top: 0; }
+.funnel-num { font-family: var(--font-d); font-weight: 700; font-size: 14px; min-width: 80px; text-align: right; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GTM — CHANNEL TABLE
+   ═══════════════════════════════════════════════════════════════ */
+.channel-priority {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.priority-p0 { background: var(--primary-bg); color: var(--primary-l); }
+.priority-p1 { background: var(--blue-bg); color: var(--blue); }
+.priority-p2 { background: var(--gold-bg); color: var(--gold); }
+.priority-p3 { background: var(--bg-elevated); color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════════
+   ARCHITECTURE STACK
+   ═══════════════════════════════════════════════════════════════ */
+.arch-stack { display: flex; flex-direction: column; gap: 0; max-width: 800px; margin: 0 auto; }
+.arch-layer {
+  padding: 20px 28px; border: 1px solid var(--border); position: relative;
+  display: flex; align-items: center; gap: 16px;
+}
+.arch-layer:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.arch-layer:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.arch-layer + .arch-layer { border-top: none; }
+.arch-layer-num {
+  font-family: var(--font-d); font-size: 11px; font-weight: 700;
+  color: var(--text-muted); min-width: 14px; text-align: center;
+}
+.arch-layer-title { font-weight: 600; font-size: 14px; min-width: 180px; }
+.arch-layer-desc { font-size: 13px; color: var(--text-sec); }
+.arch-layer[data-layer="5"] { background: var(--primary-bg); }
+.arch-layer[data-layer="4"] { background: rgba(139,108,193,0.08); }
+.arch-layer[data-layer="3"] { background: rgba(77,136,204,0.08); }
+.arch-layer[data-layer="2"] { background: var(--gold-bg); }
+.arch-layer[data-layer="1"] { background: var(--bg-surface); }
+
+/* Business Model — Not/We grid */
+.not-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; }
+.not-card {
+  padding: 20px; border-radius: var(--radius); background: var(--bg-surface);
+  border: 1px solid var(--border); border-top: 2px solid var(--red);
+}
+.not-card-label { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.not-card-text { font-size: 13px; color: var(--text-sec); line-height: 1.6; }
+
+/* Revenue stack bars */
+.rev-stack { display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 32px auto 0; }
+.rev-bar { display: flex; align-items: center; gap: 16px; }
+.rev-bar-label { font-size: 13px; font-weight: 500; min-width: 120px; text-align: right; }
+.rev-bar-track { flex: 1; height: 32px; border-radius: 8px; background: var(--bg-hover); position: relative; overflow: hidden; }
+.rev-bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+.rev-bar-price { font-family: var(--font-d); font-weight: 700; font-size: 14px; min-width: 80px; }
+
+/* Data flow diagram */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 32px 0; }
+.flow-step {
+  padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  background: var(--bg-surface); border: 1px solid var(--border); text-align: center;
+  max-width: 500px; width: 100%;
+}
+.flow-arrow { color: var(--text-muted); font-size: 18px; padding: 4px 0; }
+
+/* GTM section divider */
+.gtm-divider {
+  padding: 120px 60px 40px; text-align: center; max-width: 1100px; margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.gtm-divider-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em;
+  color: var(--gold); display: inline-flex; align-items: center; gap: 12px;
+}
+.gtm-divider-label::before, .gtm-divider-label::after { content: ''; width: 40px; height: 1px; background: var(--gold); opacity: 0.3; }
+.gtm-divider h2 {
+  font-family: var(--font-d); font-size: clamp(32px, 5vw, 52px); font-weight: 300;
+  line-height: 1.2; margin-top: 16px;
+  background: linear-gradient(135deg, var(--gold) 0%, #e8c87a 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+@media (max-width: 1024px) {
+  .card-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .tier-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .ble-matrix { grid-template-columns: repeat(2, 1fr); }
+  .econ-grid { grid-template-columns: repeat(2, 1fr); }
+  .comp-stats { grid-template-columns: repeat(2, 1fr); }
+  .not-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #nav-toggle { display: flex; }
+  #main { margin-left: 0; }
+  .section { padding: 48px 20px; }
+  #hero { padding: 48px 20px; }
+  .card-grid, .card-grid-3, .card-grid-2 { grid-template-columns: 1fr; }
+  .tier-grid { grid-template-columns: 1fr; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .compare-grid { grid-template-columns: 1fr; }
+  .compare-arrow { display: none; }
+  .ble-matrix { grid-template-columns: 1fr; }
+  .matrix-container { aspect-ratio: 1/1; }
+  .landscape-container { aspect-ratio: 1/1; }
+  .econ-grid { grid-template-columns: 1fr 1fr; }
+  .tam-rings { gap: 24px; }
+  .gtm-divider { padding: 80px 20px 24px; }
+  .funnel-step-name { min-width: 80px; font-size: 12px; }
+  .comp-stats { grid-template-columns: 1fr; }
+  .not-grid { grid-template-columns: 1fr; }
+  .arch-layer { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .arch-layer-title { min-width: auto; }
+  .rev-bar-label { min-width: 80px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress"></div>
+
+<!-- Mobile nav toggle -->
+<button id="nav-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="sidebar-brand">Elbow Recovery</div>
+  <div class="sidebar-sub">Platform Strategy Report — Feb 2026</div>
+
+  <button class="nav-link active" data-target="hero"><span class="nav-num">00</span> Overview</button>
+  <button class="nav-link" data-target="current"><span class="nav-num">01</span> Что построено</button>
+  <button class="nav-link" data-target="gaps"><span class="nav-num">02</span> Слепые зоны</button>
+  <button class="nav-link" data-target="data"><span class="nav-num">03</span> Данные</button>
+  <button class="nav-link" data-target="wearables"><span class="nav-num">04</span> Wearables</button>
+  <button class="nav-link" data-target="devices"><span class="nav-num">05</span> Устройства</button>
+  <button class="nav-link" data-target="roadmap"><span class="nav-num">06</span> Roadmap</button>
+  <button class="nav-link" data-target="matrix"><span class="nav-num">07</span> Приоритеты</button>
+  <button class="nav-link" data-target="monetization"><span class="nav-num">08</span> Монетизация</button>
+  <button class="nav-link" data-target="action"><span class="nav-num">09</span> Action Plan</button>
+
+  <div style="margin:16px 0 8px;padding-top:16px;border-top:1px solid var(--border)">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.15em;color:var(--gold);margin-bottom:8px;padding:0 12px">Go-to-Market</div>
+  </div>
+  <button class="nav-link" data-target="gtm-bmodel"><span class="nav-num">10</span> Business Model</button>
+  <button class="nav-link" data-target="gtm-arch"><span class="nav-num">11</span> Product Architecture</button>
+  <button class="nav-link" data-target="gtm-market"><span class="nav-num">12</span> Market Definition</button>
+  <button class="nav-link" data-target="gtm-tam"><span class="nav-num">13</span> TAM / SAM / SOM</button>
+  <button class="nav-link" data-target="gtm-landscape"><span class="nav-num">14</span> Competitive Map</button>
+  <button class="nav-link" data-target="gtm-matrix"><span class="nav-num">15</span> Feature Matrix</button>
+  <button class="nav-link" data-target="gtm-deepdive"><span class="nav-num">16</span> Deep Dives</button>
+  <button class="nav-link" data-target="gtm-unit"><span class="nav-num">17</span> Unit Economics</button>
+  <button class="nav-link" data-target="gtm-strategy"><span class="nav-num">18</span> GTM Strategy</button>
+  <button class="nav-link" data-target="gtm-moats"><span class="nav-num">19</span> Moats & Why Now</button>
+
+  <div class="sidebar-footer">
+    Версия 1.2.0 · Next.js 16 · React 19<br>
+    Dexie v4 · Zustand · MediaPipe
+  </div>
+</nav>
+
+<!-- Main content -->
+<main id="main">
+
+  <!-- ═══════ HERO ═══════ -->
+  <section id="hero" class="section">
+    <div class="hero-label">Strategic Analysis</div>
+    <h1 class="hero-title">
+      От реабилитации локтя —<br>к <strong>интегрированной health-платформе</strong>
+    </h1>
+    <p class="hero-subtitle">
+      Полный аудит текущего состояния, gap-анализ, интеграции с wearables и медицинскими устройствами,
+      roadmap эволюции и модель монетизации.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-card reveal" data-accent="green">
+        <div class="stat-num" data-counter="22">0</div>
+        <div class="stat-label">Маршрутов</div>
+      </div>
+      <div class="stat-card reveal reveal-d1" data-accent="blue">
+        <div class="stat-num" data-counter="10">0</div>
+        <div class="stat-label">Таблиц БД</div>
+      </div>
+      <div class="stat-card reveal reveal-d2" data-accent="purple">
+        <div class="stat-num" data-counter="80" data-suffix="+">0</div>
+        <div class="stat-label">Компонентов</div>
+      </div>
+      <div class="stat-card reveal reveal-d3" data-accent="red">
+        <div class="stat-num" data-counter="0">0</div>
+        <div class="stat-label">Интеграций</div>
+      </div>
+    </div>
+    <div class="hero-scroll">↓ &nbsp; Scroll to explore</div>
+  </section>
+
+  <!-- ═══════ 01 CURRENT STATE ═══════ -->
+  <section id="current" class="section">
+    <div class="section-num reveal">01 · Текущее состояние</div>
+    <h2 class="section-title reveal">Что мы построили</h2>
+    <p class="section-desc reveal">Полная карта функционала: 8 подсистем, 22 маршрута, 10 таблиц IndexedDB, 32 нутрицевтика, 9 упражнений, 16 ачивок.</p>
+
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-icon" style="background:var(--primary-bg);color:var(--primary-l)">🏋</div>
+        <div class="card-title">Training System</div>
+        <div class="card-desc">9 упражнений ORIF-протокола, 5 сессий/день (135 мин), таймер, pain before/after, 30-sec rule, wake lock, swipe-навигация</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d1">
+        <div class="card-icon" style="background:var(--blue-bg);color:var(--blue)">📐</div>
+        <div class="card-title">ROM Tracking</div>
+        <div class="card-desc">Ручной ввод + AI измерение из фото (MediaPipe PoseLandmarker), Recharts графики, интерпретация, milestones</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d2">
+        <div class="card-icon" style="background:var(--purple-bg);color:var(--purple)">💊</div>
+        <div class="card-title">Supplements</div>
+        <div class="card-desc">32 нутрицевтика, 5 слотов по времени, чеклист, взаимодействия, тест-маркеры, приоритеты</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d3">
+        <div class="card-icon" style="background:var(--red-bg);color:var(--red)">❤</div>
+        <div class="card-title">Pain Diary</div>
+        <div class="card-desc">Локация, характер, триггеры, крепитация, онемение, красные флаги (ulnar neuropathy, sustained 8+)</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d4">
+        <div class="card-icon" style="background:var(--blue-bg);color:var(--blue)">🌙</div>
+        <div class="card-title">Sleep Log</div>
+        <div class="card-desc">Bed/wake time, качество 1-5, пробуждения, гормональная timeline (GH/cortisol)</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d5">
+        <div class="card-icon" style="background:var(--gold-bg);color:var(--gold)">🏆</div>
+        <div class="card-title">Gamification</div>
+        <div class="card-desc">Recovery Score 0-100, 16 ачивок, XP/уровни (200 XP/level), стрик-фриз, daily challenges, toast</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d6">
+        <div class="card-icon" style="background:var(--cyan-bg);color:var(--cyan)">🧘</div>
+        <div class="card-title">Wellness</div>
+        <div class="card-desc">Дыхание (4-7-8, box, calm), mood + energy check-in, дневник восстановления с тегами</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+      <div class="card reveal reveal-d7">
+        <div class="card-icon" style="background:var(--purple-bg);color:var(--purple)">📊</div>
+        <div class="card-title">Smart Analytics</div>
+        <div class="card-desc">Data-driven tips (sleep, pain, ROM), 4-week forecast, streak calendar, weekly summary, doctor report</div>
+        <div class="card-tag tag-green">✓ Полностью</div>
+      </div>
+    </div>
+
+    <div class="insight reveal">
+      <strong>Вердикт:</strong> Как self-contained PWA для одного пациента — это один из самых полных реабилитационных трекеров на рынке.
+      Но все данные вводятся вручную, нет синхронизации и нет интеграций.
+      Для перехода в платформу — нужны три вещи: backend, wearables, generalization.
+    </div>
+  </section>
+
+  <!-- ═══════ 02 GAP ANALYSIS ═══════ -->
+  <section id="gaps" class="section">
+    <div class="section-num reveal">02 · Gap Analysis</div>
+    <h2 class="section-title reveal">Слепые зоны</h2>
+    <p class="section-desc reveal">6 критических пробелов, которые блокируют рост от приложения до платформы.</p>
+
+    <div class="card-grid-2">
+      <div class="card gap-card reveal">
+        <div class="gap-severity severity-critical"></div>
+        <div class="card-title">100% ручной ввод данных</div>
+        <div class="card-desc">Каждая запись — руками. Сон, боль, добавки, настроение. 5+ минут/день на input. С wearable — 30 секунд. Ручной ввод = субъективность, пропуски, friction.</div>
+        <div class="card-tag tag-red">Critical</div>
+      </div>
+      <div class="card gap-card reveal reveal-d1">
+        <div class="gap-severity severity-critical"></div>
+        <div class="card-title">Нет серверной части</div>
+        <div class="card-desc">0 API routes. Всё — IndexedDB + localStorage. Невозможно: OAuth для wearables, sync между устройствами, sharing с врачом, AI на исторических данных.</div>
+        <div class="card-tag tag-red">Critical</div>
+      </div>
+      <div class="card gap-card reveal reveal-d2">
+        <div class="gap-severity severity-high"></div>
+        <div class="card-title">Нет данных от wearables</div>
+        <div class="card-desc">Отсутствуют: HRV, sleep stages, stress score, SpO2, resting HR, skin temperature, strain. Это 80% объективных маркеров восстановления.</div>
+        <div class="card-tag tag-gold">High</div>
+      </div>
+      <div class="card gap-card reveal reveal-d3">
+        <div class="gap-severity severity-high"></div>
+        <div class="card-title">Single-device only</div>
+        <div class="card-desc">Данные привязаны к одному браузеру. Очистка кэша = потеря всего. Нет миграции между телефонами. Нет web + mobile sync.</div>
+        <div class="card-tag tag-gold">High</div>
+      </div>
+      <div class="card gap-card reveal reveal-d4">
+        <div class="gap-severity severity-medium"></div>
+        <div class="card-title">Missing health trackers</div>
+        <div class="card-desc">Нет трекинга: grip strength (ключевой маркер руки), отёк (окружность), фото прогресса, стресс, гидратация, медикаменты (НПВС).</div>
+        <div class="card-tag tag-blue">Medium</div>
+      </div>
+      <div class="card gap-card reveal reveal-d5">
+        <div class="gap-severity severity-medium"></div>
+        <div class="card-title">Нет sharing с провайдером</div>
+        <div class="card-desc">Врач получает только print PDF. Нет real-time доступа, нет FHIR export, нет webhook'ов для клиники. Пациент изолирован.</div>
+        <div class="card-tag tag-blue">Medium</div>
+      </div>
+    </div>
+
+    <div class="insight insight-red reveal">
+      <strong>Ключевой барьер:</strong> Без backend невозможна ни одна интеграция — OAuth требует server-side token exchange.
+      Supabase (auth + PostgreSQL + edge functions) — минимальный unlock для всего остального.
+    </div>
+  </section>
+
+  <!-- ═══════ 03 DATA BLINDSPOT ═══════ -->
+  <section id="data" class="section">
+    <div class="section-num reveal">03 · Данные</div>
+    <h2 class="section-title reveal">Ручной ввод vs Автоматика</h2>
+    <p class="section-desc reveal">Как wearables трансформируют качество и полноту данных.</p>
+
+    <div class="compare-grid reveal">
+      <div class="compare-col">
+        <div class="compare-header" style="background:var(--red-bg);color:var(--red)">Сейчас — руками</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">⏱ Bed/wake time по памяти</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ HRV — нет данных</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ Stress — нет данных</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ Пульс покоя — нет данных</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ SpO2 — нет данных</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ Температура кожи — нет</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">📋 Recovery Score — формула</div>
+        <div class="compare-item" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px">❌ Калории / активность — нет</div>
+      </div>
+      <div class="compare-arrow">
+        <span>→</span><span>→</span><span>→</span><span>→</span><span>→</span><span>→</span><span>→</span><span>→</span>
+      </div>
+      <div class="compare-col">
+        <div class="compare-header" style="background:var(--primary-bg);color:var(--primary-l)">С wearable — автоматически</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Sleep stages (deep/REM/light)</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ RMSSD каждые 5 мин, тренды</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Real-time + дневная кривая</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Continuous HR, тренд за месяцы</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Ночной мониторинг кислорода</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Маркер воспаления / инфекции</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ WHOOP Recovery × биометрия</div>
+        <div class="compare-item" style="background:var(--primary-bg);border:1px solid rgba(91,138,114,0.2);border-radius:8px;color:var(--primary-l)">✓ Strain score, шаги, расход</div>
+      </div>
+    </div>
+
+    <div class="insight reveal" style="margin-top:32px">
+      <strong>Наука:</strong> HRV снижается на 9+ дней после ортопедической операции и коррелирует с осложнениями (LF/HF &lt; 1 → пневмония, likelihood ratio 6.1).
+      Во время deep sleep секретируется GH — стимулирует остеобласты. Депривация сна снижает IGF-1 на 30% и подавляет PI3K/AKT путь формирования кости.
+      Skin temperature — ранний маркер воспаления. CV ROM accuracy: 85-98% (наш MediaPipe: ICC 0.91). Всё это недоступно при ручном вводе.
+    </div>
+  </section>
+
+  <!-- ═══════ 04 WEARABLES ═══════ -->
+  <section id="wearables" class="section">
+    <div class="section-num reveal">04 · Wearable Ecosystem</div>
+    <h2 class="section-title reveal">Экосистема носимых устройств</h2>
+    <p class="section-desc reveal">Приоритеты интеграции по API-доступности, богатству данных и аудитории.</p>
+
+    <div class="card-grid-2">
+      <div class="card wearable-card reveal">
+        <div class="wearable-logo" style="background:linear-gradient(135deg,#00b388,#008060);color:#fff">W</div>
+        <div class="card-title">WHOOP</div>
+        <div class="card-desc">REST API v2 + Webhooks. HRV, Recovery Score (0-100%), sleep stages, strain (0-21), SpO2, skin temp, respiratory rate. Самый богатый набор recovery-метрик.</div>
+        <div class="wearable-meta">
+          <span class="wearable-meta-item">OAuth 2.0</span>
+          <span class="wearable-meta-item">REST v2</span>
+          <span class="wearable-meta-item">Webhooks</span>
+          <span class="wearable-meta-item">Free API</span>
+        </div>
+        <div class="card-tag tag-green" style="margin-top:12px">Приоритет #1</div>
+      </div>
+      <div class="card wearable-card reveal reveal-d1">
+        <div class="wearable-logo" style="background:linear-gradient(135deg,#b3b3b3,#7a7a7a);color:#fff">O</div>
+        <div class="card-title">Oura Ring</div>
+        <div class="card-desc">REST API v2 + Webhooks. Sleep score, readiness, daily stress, HRV balance, SpO2, cardiovascular age, temperature deviation, resilience score.</div>
+        <div class="wearable-meta">
+          <span class="wearable-meta-item">OAuth 2.0</span>
+          <span class="wearable-meta-item">REST v2</span>
+          <span class="wearable-meta-item">Webhooks</span>
+          <span class="wearable-meta-item">Free API</span>
+        </div>
+        <div class="card-tag tag-green" style="margin-top:12px">Приоритет #2</div>
+      </div>
+      <div class="card wearable-card reveal reveal-d2">
+        <div class="wearable-logo" style="background:linear-gradient(135deg,#007cc3,#005a8c);color:#fff">G</div>
+        <div class="card-title">Garmin</div>
+        <div class="card-desc">Push-based Health API + Activity API (.FIT files). Body Battery, stress score (3-min granularity), respiration, sleep, epoch data. Нужен server endpoint.</div>
+        <div class="wearable-meta">
+          <span class="wearable-meta-item">OAuth 1.0a</span>
+          <span class="wearable-meta-item">Push-only</span>
+          <span class="wearable-meta-item">JSON + FIT</span>
+          <span class="wearable-meta-item">Free + Approval</span>
+        </div>
+        <div class="card-tag tag-blue" style="margin-top:12px">Приоритет #3</div>
+      </div>
+      <div class="card wearable-card reveal reveal-d3">
+        <div class="wearable-logo" style="background:linear-gradient(135deg,#00b0b9,#008c94);color:#fff">F</div>
+        <div class="card-title">Fitbit (Google)</div>
+        <div class="card-desc">REST API. Steps, HR, sleep, SpO2, stress management. Google Fit REST deprecated — Fitbit Web API is the official replacement for Google ecosystem.</div>
+        <div class="wearable-meta">
+          <span class="wearable-meta-item">OAuth 2.0</span>
+          <span class="wearable-meta-item">REST</span>
+          <span class="wearable-meta-item">Free tier</span>
+          <span class="wearable-meta-item">Rate limited</span>
+        </div>
+        <div class="card-tag tag-blue" style="margin-top:12px">Приоритет #4</div>
+      </div>
+    </div>
+
+    <!-- Data matrix -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">Матрица доступности данных</h3>
+    <div class="reveal">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Метрика</th>
+            <th class="cell-center">Сейчас</th>
+            <th class="cell-center">WHOOP</th>
+            <th class="cell-center">Oura</th>
+            <th class="cell-center">Garmin</th>
+            <th class="cell-center">Fitbit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Sleep Stages</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>HRV (RMSSD)</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>Recovery / Readiness</td><td class="cell-center"><span class="dot dot-partial"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-no"></span></td></tr>
+          <tr><td>Stress Score</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>SpO2</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>Skin Temperature</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-no"></span></td></tr>
+          <tr><td>Resting HR</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>Strain / Activity</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td></tr>
+          <tr><td>Respiratory Rate</td><td class="cell-center"><span class="dot dot-no"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-yes"></span></td><td class="cell-center"><span class="dot dot-no"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>WHOOP Recovery Score — как работает:</strong> 6 метрик: HRV (во время deep sleep, наибольший вес), Resting HR,
+      Respiratory Rate, Sleep Performance, SpO2, Skin Temperature. Персонализация к базовому уровню пользователя.
+      Green 67-100% = готов к нагрузке, Yellow 34-66% = умеренно, Red 0-33% = отдых. Exact weighting — proprietary.
+    </div>
+
+    <div class="insight insight-gold reveal" style="margin-top:12px">
+      <strong>Альтернатива:</strong> Terra API ($399/мес) — единый SDK для 500+ устройств, включая Apple Health через mobile SDK.
+      Для MVP с 1-2 wearables — прямая интеграция дешевле. Для 3+ устройств — Terra окупается.
+    </div>
+  </section>
+
+  <!-- ═══════ 05 SMART DEVICES ═══════ -->
+  <section id="devices" class="section">
+    <div class="section-num reveal">05 · Smart Medical Devices</div>
+    <h2 class="section-title reveal">Медицинские гаджеты</h2>
+    <p class="section-desc reveal">BLE-устройства для точного трекинга реабилитации.</p>
+
+    <div class="device-grid reveal">
+      <div class="device-card">
+        <div class="device-type" style="color:var(--purple)">EMS / TENS</div>
+        <div class="device-name">PowerDot 2.0</div>
+        <div class="device-feature">BLE, app-controlled programs</div>
+        <div class="device-feature">Session history, intensity tracking</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--purple)">EMS / TENS</div>
+        <div class="device-name">Compex Mini Wireless</div>
+        <div class="device-feature">BLE, 6 programs</div>
+        <div class="device-feature">MI technology, adaptive</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--blue)">Гониометр</div>
+        <div class="device-name">EasyAngle (Meloq)</div>
+        <div class="device-feature">BLE, ±1° точность</div>
+        <div class="device-feature">2000+ замеров/заряд</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--blue)">Гониометр</div>
+        <div class="device-name">KINVENT K-Move</div>
+        <div class="device-feature">BLE → Kinvent Physio App</div>
+        <div class="device-feature">Clinical-grade, экосистема</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--primary-l)">Динамометр</div>
+        <div class="device-name">Squegg</div>
+        <div class="device-feature">BLE, gamified training</div>
+        <div class="device-feature">AI-integrated, progress tracking</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--primary-l)">Динамометр</div>
+        <div class="device-name">Jamar Smart</div>
+        <div class="device-feature">BLE, gold-standard design</div>
+        <div class="device-feature">Tablet app, digital records</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--cyan)">Cold Therapy</div>
+        <div class="device-name">Hyperice SensePod</div>
+        <div class="device-feature">Cold + compression + sound</div>
+        <div class="device-feature">App-controlled, HyperSmart</div>
+      </div>
+      <div class="device-card">
+        <div class="device-type" style="color:var(--gold)">CGM</div>
+        <div class="device-name">Dexcom Stelo</div>
+        <div class="device-feature">OTC (без рецепта), FDA-cleared</div>
+        <div class="device-feature">Metabolic health optimization</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">Web Bluetooth — совместимость браузеров</h3>
+    <div class="ble-matrix reveal">
+      <div class="ble-item">
+        <div class="ble-browser">Chrome</div>
+        <div class="ble-status ble-ok">Поддержка</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Desktop + Android</div>
+      </div>
+      <div class="ble-item">
+        <div class="ble-browser">Edge</div>
+        <div class="ble-status ble-ok">Поддержка</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Chromium-based</div>
+      </div>
+      <div class="ble-item">
+        <div class="ble-browser">Safari</div>
+        <div class="ble-status ble-no">Нет поддержки</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">iOS + macOS</div>
+      </div>
+      <div class="ble-item">
+        <div class="ble-browser">Firefox</div>
+        <div class="ble-status ble-no">Нет поддержки</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Все платформы</div>
+      </div>
+    </div>
+
+    <div class="insight insight-red reveal" style="margin-top:24px">
+      <strong>iOS = блокер для BLE.</strong> Safari не поддерживает Web Bluetooth. Для BLE-устройств на iPhone нужен
+      native app (React Native / Capacitor). Стратегия: progressive enhancement — BLE на Android, ручной ввод на iOS,
+      wearable API (WHOOP/Oura) работают везде через OAuth.
+    </div>
+  </section>
+
+  <!-- ═══════ 06 ROADMAP ═══════ -->
+  <section id="roadmap" class="section">
+    <div class="section-num reveal">06 · Platform Roadmap</div>
+    <h2 class="section-title reveal">Эволюция платформы</h2>
+    <p class="section-desc reveal">5 фаз трансформации от single-patient PWA к multi-tenant health platform.</p>
+
+    <div class="timeline reveal">
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--primary)"></div>
+        <div class="timeline-phase" style="color:var(--primary)">Phase A</div>
+        <div class="timeline-title">Foundation — Backend + Auth + Sync</div>
+        <div class="timeline-desc">
+          Supabase: auth (magic link / Google), PostgreSQL с Row Level Security, real-time subscriptions.
+          Sync engine: IndexedDB ↔ Supabase (offline-first с conflict resolution).
+          Edge Functions для OAuth callback'ов wearable API.
+        </div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Supabase</span>
+          <span class="timeline-tag">Auth</span>
+          <span class="timeline-tag">Sync engine</span>
+          <span class="timeline-tag">Edge Functions</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--blue)"></div>
+        <div class="timeline-phase" style="color:var(--blue)">Phase B</div>
+        <div class="timeline-title">Wearable Layer — WHOOP + Oura</div>
+        <div class="timeline-desc">
+          OAuth 2.0 flow для WHOOP и Oura. Webhook receiver для push-данных.
+          Unified health dashboard: composite Recovery Score = WHOOP Recovery × 0.3 + Sleep Quality × 0.25 + Session Compliance × 0.2 + Pain Trend × 0.15 + ROM Progress × 0.1.
+          HRV-based session intensity adaptation.
+        </div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">WHOOP API v2</span>
+          <span class="timeline-tag">Oura API v2</span>
+          <span class="timeline-tag">Webhooks</span>
+          <span class="timeline-tag">HRV analytics</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--purple)"></div>
+        <div class="timeline-phase" style="color:var(--purple)">Phase C</div>
+        <div class="timeline-title">Intelligence Layer — Adaptive Recovery</div>
+        <div class="timeline-desc">
+          ML-модель: корреляция HRV → скорость ROM-прогресса.
+          Adaptive sessions: автоматическая корректировка интенсивности по recovery data.
+          Sleep coaching: персональный оптимум для GH-пика.
+          Nutrition timing: рекомендации по времени приёма на основе циркадного ритма.
+        </div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">ML pipeline</span>
+          <span class="timeline-tag">Adaptive sessions</span>
+          <span class="timeline-tag">Sleep coaching</span>
+          <span class="timeline-tag">Circadian optimization</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--gold)"></div>
+        <div class="timeline-phase" style="color:var(--gold)">Phase D</div>
+        <div class="timeline-title">Device Ecosystem — BLE + Medical</div>
+        <div class="timeline-desc">
+          Web Bluetooth (Android) + React Native bridge (iOS) для BLE-устройств.
+          BLE гониометр → автоматический ROM замер. BLE динамометр → grip strength тренды.
+          EMS/TENS протоколы → интеграция с планом сессий.
+          CGM (Dexcom Stelo) → metabolic optimization для заживления.
+        </div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Web Bluetooth</span>
+          <span class="timeline-tag">React Native</span>
+          <span class="timeline-tag">Goniometer</span>
+          <span class="timeline-tag">Dynamometer</span>
+          <span class="timeline-tag">CGM</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--cyan)"></div>
+        <div class="timeline-phase" style="color:var(--cyan)">Phase E</div>
+        <div class="timeline-title">Platform Generalization — Multi-Protocol</div>
+        <div class="timeline-desc">
+          Recovery Platform: шаблоны протоколов (плечо, колено, спина, тазобедренный).
+          Конструктор упражнений — физиотерапевт задаёт программу.
+          B2B: multi-tenant, клиника → пациенты, provider dashboard.
+          FHIR R4 export для интеграции с EHR.
+          Marketplace протоколов и устройств.
+        </div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Multi-protocol</span>
+          <span class="timeline-tag">Exercise builder</span>
+          <span class="timeline-tag">B2B</span>
+          <span class="timeline-tag">FHIR R4</span>
+          <span class="timeline-tag">Marketplace</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight insight-blue reveal" style="margin-top:32px">
+      <strong>Competitive context:</strong> Hinge Health — IPO May 2025, $2.5-3B MCap, $588M revenue (FY2025), $732M guidance (2026), <em>profitable + $180M FCF</em>.
+      Sword Health — $4B, acquired Kaia Health за $285M (Jan 2026). B2B PT software: $1.54B → $3.82B.
+      DTx market: $9.73B → $56.76B (CAGR 21.65%). CMS approved DTx CPT codes. Рынок консолидируется —
+      мелких поглощают. Наш edge: patient-first + supplement niche (underserved) + переход в B2B.
+    </div>
+  </section>
+
+  <!-- ═══════ 07 EFFORT/IMPACT MATRIX ═══════ -->
+  <section id="matrix" class="section">
+    <div class="section-num reveal">07 · Decision Matrix</div>
+    <h2 class="section-title reveal">Матрица приоритетов</h2>
+    <p class="section-desc reveal">Effort vs Impact — что строить первым.</p>
+
+    <div class="matrix-container reveal">
+      <div class="matrix-line-h"></div>
+      <div class="matrix-line-v"></div>
+      <div class="matrix-axis-x">Effort →</div>
+      <div class="matrix-axis-y">Impact →</div>
+
+      <!-- Quadrant labels -->
+      <div class="matrix-quadrant" style="left:25%;top:25%">Quick Wins</div>
+      <div class="matrix-quadrant" style="left:75%;top:25%">Big Bets</div>
+      <div class="matrix-quadrant" style="left:25%;top:75%">Nice to Have</div>
+      <div class="matrix-quadrant" style="left:75%;top:75%">Defer</div>
+
+      <!-- Quick Wins — low effort, high impact -->
+      <div class="matrix-item" style="left:20%;top:18%;background:var(--primary-bg);color:var(--primary-l);border-color:rgba(91,138,114,0.3)">Grip Strength</div>
+      <div class="matrix-item" style="left:28%;top:28%;background:var(--primary-bg);color:var(--primary-l);border-color:rgba(91,138,114,0.3)">Edema Tracker</div>
+      <div class="matrix-item" style="left:35%;top:15%;background:var(--primary-bg);color:var(--primary-l);border-color:rgba(91,138,114,0.3)">Photo Timeline</div>
+      <div class="matrix-item" style="left:15%;top:35%;background:var(--primary-bg);color:var(--primary-l);border-color:rgba(91,138,114,0.3)">ICS Export</div>
+      <div class="matrix-item" style="left:38%;top:32%;background:var(--primary-bg);color:var(--primary-l);border-color:rgba(91,138,114,0.3)">Video Exercises</div>
+
+      <!-- Big Bets — high effort, high impact -->
+      <div class="matrix-item" style="left:62%;top:15%;background:var(--blue-bg);color:var(--blue);border-color:rgba(77,136,204,0.3)">Supabase Backend</div>
+      <div class="matrix-item" style="left:72%;top:22%;background:var(--blue-bg);color:var(--blue);border-color:rgba(77,136,204,0.3)">WHOOP Integration</div>
+      <div class="matrix-item" style="left:82%;top:12%;background:var(--gold-bg);color:var(--gold);border-color:rgba(212,166,71,0.3)">Platform Generalization</div>
+      <div class="matrix-item" style="left:78%;top:32%;background:var(--blue-bg);color:var(--blue);border-color:rgba(77,136,204,0.3)">Oura Integration</div>
+
+      <!-- Nice to Have — low effort, low impact -->
+      <div class="matrix-item" style="left:22%;top:65%;background:var(--bg-elevated);color:var(--text-muted);border-color:var(--border)">Hydration</div>
+      <div class="matrix-item" style="left:32%;top:72%;background:var(--bg-elevated);color:var(--text-muted);border-color:var(--border)">Body Weight</div>
+
+      <!-- Defer — high effort, limited impact due to constraints -->
+      <div class="matrix-item" style="left:70%;top:68%;background:var(--red-bg);color:var(--red);border-color:rgba(214,69,69,0.2)">BLE Ecosystem</div>
+      <div class="matrix-item" style="left:80%;top:78%;background:var(--red-bg);color:var(--red);border-color:rgba(214,69,69,0.2)">FHIR Export</div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px" class="reveal">
+      <span style="display:flex;align-items:center;gap:6px"><span class="dot dot-yes"></span> Quick Wins (1-3ч)</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue)"></span> Big Bets (1-4 недели)</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-muted);opacity:0.5"></span> Nice to Have</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red)"></span> Defer</span>
+    </div>
+  </section>
+
+  <!-- ═══════ 08 MONETIZATION ═══════ -->
+  <section id="monetization" class="section">
+    <div class="section-num reveal">08 · Revenue Model</div>
+    <h2 class="section-title reveal">Модель монетизации</h2>
+    <p class="section-desc reveal">Freemium + подписка. 57% пользователей health-приложений готовы платить, 62% хотят AI.</p>
+
+    <div class="tier-grid reveal">
+      <div class="tier-card">
+        <div class="tier-name">Free</div>
+        <div style="font-size:12px;color:var(--text-muted)">Навсегда</div>
+        <div class="tier-price">$0</div>
+        <ul class="tier-features">
+          <li>Ручной tracking</li>
+          <li>Базовые упражнения</li>
+          <li>30 дней истории</li>
+          <li>Recovery Score</li>
+          <li>Pain diary</li>
+        </ul>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-name" style="color:var(--primary-l)">Premium</div>
+        <div style="font-size:12px;color:var(--text-muted)">Для пациентов</div>
+        <div class="tier-price">$7<span>/мес</span></div>
+        <ul class="tier-features">
+          <li>Wearable интеграции</li>
+          <li>AI рекомендации</li>
+          <li>Unlimited история</li>
+          <li>PDF/CSV export</li>
+          <li>Advanced analytics</li>
+          <li>Cloud sync</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name" style="color:var(--purple)">Pro</div>
+        <div style="font-size:12px;color:var(--text-muted)">Клинический</div>
+        <div class="tier-price">$25<span>/мес</span></div>
+        <ul class="tier-features">
+          <li>Multi-patient dashboard</li>
+          <li>FHIR R4 export</li>
+          <li>Provider sharing</li>
+          <li>BLE device support</li>
+          <li>Adaptive sessions</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name" style="color:var(--gold)">B2B Clinic</div>
+        <div style="font-size:12px;color:var(--text-muted)">Для клиник</div>
+        <div class="tier-price">$199<span>/мес</span></div>
+        <ul class="tier-features">
+          <li>White-label</li>
+          <li>Группы пациентов</li>
+          <li>Конструктор протоколов</li>
+          <li>Analytics dashboard</li>
+          <li>API access</li>
+          <li>Dedicated support</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="market-bar reveal">
+      <div>
+        <div class="market-label" style="color:var(--text-muted)">Wellness Apps Market 2026</div>
+        <div class="market-num" style="color:var(--primary-l)" data-counter="29" data-prefix="$" data-suffix="B">$0</div>
+      </div>
+      <div class="market-bar-visual">
+        <div class="market-bar-fill" data-width="36" style="width:0%"></div>
+      </div>
+      <div style="text-align:right">
+        <div class="market-label" style="color:var(--text-muted)">Projected 2035</div>
+        <div class="market-num" style="color:var(--gold)" data-counter="81" data-prefix="$" data-suffix="B">$0</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px" class="reveal">
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--primary-l)">12%</div>
+        <div style="font-size:12px;color:var(--text-muted)">CAGR рынка</div>
+      </div>
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--gold)">57%</div>
+        <div style="font-size:12px;color:var(--text-muted)">Готовы платить</div>
+      </div>
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--blue)">$15.3B</div>
+        <div style="font-size:12px;color:var(--text-muted)">CGM market 2026</div>
+      </div>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>Supplement tracking — underserved niche:</strong> Medisafe (лидер рынка) стал платным с Jan 2026.
+      MyTherapy — бесплатный, но трактует добавки как generic pills. Ни одно приложение не предлагает:
+      timing optimization, nutrient interaction checking, biomarker-linked dosing. Наши 32 добавки с 5 слотами,
+      взаимодействиями и тест-маркерами — уже лучше рынка. Это defensible niche для Premium tier.
+    </div>
+  </section>
+
+  <!-- ═══════ 09 ACTION PLAN ═══════ -->
+  <section id="action" class="section">
+    <div class="section-num reveal">09 · Action Plan</div>
+    <h2 class="section-title reveal">Следующий спринт</h2>
+    <p class="section-desc reveal">Топ-10 задач в порядке приоритета. Quick wins первыми — максимум value при минимуме effort.</p>
+
+    <div class="action-list">
+      <div class="action-item reveal">
+        <div class="action-rank" style="background:var(--primary-bg);color:var(--primary-l)">1</div>
+        <div class="action-content">
+          <div class="action-title">Grip Strength Tracker</div>
+          <div class="action-meta">Ручной ввод кг, тренд-график, корреляция с ROM. Ключевой маркер для руки.</div>
+        </div>
+        <div class="action-effort" style="background:var(--primary-bg);color:var(--primary-l)">2-3ч</div>
+      </div>
+      <div class="action-item reveal reveal-d1">
+        <div class="action-rank" style="background:var(--primary-bg);color:var(--primary-l)">2</div>
+        <div class="action-content">
+          <div class="action-title">Edema Measurement</div>
+          <div class="action-meta">Окружность руки в см, ежедневный тренд. Объективный маркер воспаления.</div>
+        </div>
+        <div class="action-effort" style="background:var(--primary-bg);color:var(--primary-l)">1-2ч</div>
+      </div>
+      <div class="action-item reveal reveal-d2">
+        <div class="action-rank" style="background:var(--primary-bg);color:var(--primary-l)">3</div>
+        <div class="action-content">
+          <div class="action-title">Photo Timeline</div>
+          <div class="action-meta">Before/after фото руки с датами. Визуальная мотивация + evidence для врача.</div>
+        </div>
+        <div class="action-effort" style="background:var(--primary-bg);color:var(--primary-l)">3-4ч</div>
+      </div>
+      <div class="action-item reveal reveal-d3">
+        <div class="action-rank" style="background:var(--blue-bg);color:var(--blue)">4</div>
+        <div class="action-content">
+          <div class="action-title">Video Exercises</div>
+          <div class="action-meta">Видео/анимация правильной техники в session runner. Снижает риск неправильного выполнения.</div>
+        </div>
+        <div class="action-effort" style="background:var(--blue-bg);color:var(--blue)">2-3ч</div>
+      </div>
+      <div class="action-item reveal reveal-d4">
+        <div class="action-rank" style="background:var(--blue-bg);color:var(--blue)">5</div>
+        <div class="action-content">
+          <div class="action-title">Weekly PDF Report</div>
+          <div class="action-meta">Расширенный PDF-отчёт для WhatsApp врачу. Графики, ROM trajectory, рекомендации.</div>
+        </div>
+        <div class="action-effort" style="background:var(--blue-bg);color:var(--blue)">4-5ч</div>
+      </div>
+      <div class="action-item reveal reveal-d5">
+        <div class="action-rank" style="background:var(--blue-bg);color:var(--blue)">6</div>
+        <div class="action-content">
+          <div class="action-title">Medication Tracker</div>
+          <div class="action-meta">НПВС, антибиотики, анальгетики. Напоминания + взаимодействия с добавками.</div>
+        </div>
+        <div class="action-effort" style="background:var(--blue-bg);color:var(--blue)">3-4ч</div>
+      </div>
+      <div class="action-item reveal reveal-d6">
+        <div class="action-rank" style="background:var(--purple-bg);color:var(--purple)">7</div>
+        <div class="action-content">
+          <div class="action-title">Supabase Backend Foundation</div>
+          <div class="action-meta">Auth + PostgreSQL + RLS + Edge Functions. Unlock для всех интеграций и sync.</div>
+        </div>
+        <div class="action-effort" style="background:var(--purple-bg);color:var(--purple)">1-2 нед</div>
+      </div>
+      <div class="action-item reveal reveal-d7">
+        <div class="action-rank" style="background:var(--purple-bg);color:var(--purple)">8</div>
+        <div class="action-content">
+          <div class="action-title">WHOOP OAuth Integration</div>
+          <div class="action-meta">OAuth 2.0 + webhook receiver. HRV, Recovery, Sleep stages → unified dashboard.</div>
+        </div>
+        <div class="action-effort" style="background:var(--purple-bg);color:var(--purple)">1 нед</div>
+      </div>
+      <div class="action-item reveal reveal-d8">
+        <div class="action-rank" style="background:var(--gold-bg);color:var(--gold)">9</div>
+        <div class="action-content">
+          <div class="action-title">Calendar ICS Export</div>
+          <div class="action-meta">Визиты к врачу → Google Calendar / Apple Calendar. Одна кнопка.</div>
+        </div>
+        <div class="action-effort" style="background:var(--gold-bg);color:var(--gold)">2ч</div>
+      </div>
+      <div class="action-item reveal">
+        <div class="action-rank" style="background:var(--gold-bg);color:var(--gold)">10</div>
+        <div class="action-content">
+          <div class="action-title">Pain Heatmap</div>
+          <div class="action-meta">SVG руки с tap-зонами боли. Нагляднее чем текстовый список локаций.</div>
+        </div>
+        <div class="action-effort" style="background:var(--gold-bg);color:var(--gold)">4-5ч</div>
+      </div>
+    </div>
+
+    <div class="insight insight-gold reveal" style="margin-top:32px">
+      <strong>Стратегия:</strong> Quick Wins (#1-6) усиливают текущее приложение без backend.
+      Big Bets (#7-8) — unlock для платформы.
+      Первые 6 пунктов можно реализовать за 1 спринт (2 недели).
+      Backend + WHOOP — следующий спринт.
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top:80px;padding-top:32px;border-top:1px solid var(--border);text-align:center" class="reveal">
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--primary-l);margin-bottom:8px">Elbow Recovery</div>
+      <div style="font-size:12px;color:var(--text-muted)">Platform Strategy Report · February 2026</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Generated with deep codebase audit + health tech market research</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       GTM ANALYSIS — PART II
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="gtm-divider reveal">
+    <div class="gtm-divider-label">Part II</div>
+    <h2>Go-to-Market Analysis</h2>
+    <p style="color:var(--text-sec);font-size:15px;margin-top:12px;max-width:560px;display:inline-block">
+      Рыночный размер, конкурентный ландшафт, unit economics и стратегия выхода. YC framework.
+    </p>
+  </div>
+
+  <!-- ═══════ 10 BUSINESS MODEL ═══════ -->
+  <section id="gtm-bmodel" class="section">
+    <div class="section-num reveal">10 · Business Model</div>
+    <h2 class="section-title reveal">Что мы строим</h2>
+    <p class="section-desc reveal">Однозначное определение продукта, бизнес-модели и источников дохода.</p>
+
+    <!-- One-liner definition -->
+    <div class="card reveal" style="border-left:3px solid var(--primary);margin-bottom:32px">
+      <div style="font-size:11px;font-weight:700;color:var(--primary-l);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Определение в одно предложение</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:400;line-height:1.5;color:var(--text)">
+        Recovery Intelligence Platform — <strong>SaaS-платформа и мобильное приложение</strong>, которое объединяет данные с носимых устройств, клинические протоколы реабилитации и AI-аналитику в единый recovery dashboard для пациента и его врача.
+      </div>
+    </div>
+
+    <!-- What we are NOT -->
+    <h3 class="reveal" style="font-family:var(--font-d);font-size:20px;font-weight:400;margin-bottom:16px;color:var(--text)">Чем мы <span style="color:var(--red)">НЕ</span> являемся</h3>
+    <div class="not-grid reveal">
+      <div class="not-card">
+        <div class="not-card-label">Не hardware company</div>
+        <div class="not-card-text">Мы не делаем своё носимое устройство. Мы интегрируем чужие wearables (WHOOP, Oura, Garmin, Fitbit) через их API и агрегатор Terra. Наша ценность — в software-слое поверх hardware.</div>
+      </div>
+      <div class="not-card">
+        <div class="not-card-label">Не telehealth / виртуальный PT</div>
+        <div class="not-card-text">Мы не заменяем физиотерапевта и не проводим виртуальные сессии. Мы даём врачу данные, а пациенту — интеллектуальный self-management между визитами к специалисту.</div>
+      </div>
+      <div class="not-card">
+        <div class="not-card-label">Не generic fitness app</div>
+        <div class="not-card-text">Клинический фокус, evidence-based протоколы, послеоперационная реабилитация. Не трекер тренировок, не wellness-журнал. Медицинская точность, а не мотивация.</div>
+      </div>
+    </div>
+
+    <!-- Business Model Canvas (simplified) -->
+    <h3 class="reveal" style="font-family:var(--font-d);font-size:20px;font-weight:400;margin:40px 0 16px;color:var(--text)">Business Model Canvas</h3>
+    <div class="card-grid-3 reveal">
+      <div class="card" style="border-top:2px solid var(--primary)">
+        <div class="card-title" style="color:var(--primary-l);font-size:13px">Value Proposition</div>
+        <div class="card-desc">Patient-first recovery OS + wearable intelligence. Единый dashboard: биометрия + клинические протоколы + AI-рекомендации.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--blue)">
+        <div class="card-title" style="color:var(--blue);font-size:13px">Customer Segments</div>
+        <div class="card-desc"><strong>B2C:</strong> пациенты после травм/операций<br><strong>B2B:</strong> PT-клиники и реабилитационные центры<br><strong>B2B2C:</strong> работодатели (RTM program)</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div class="card-title" style="color:var(--gold);font-size:13px">Revenue Streams</div>
+        <div class="card-desc">Freemium subscription (B2C) + B2B SaaS (clinic licenses) + RTM reimbursement ($121-162/mo per patient)</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--purple)">
+        <div class="card-title" style="color:var(--purple);font-size:13px">Key Partners</div>
+        <div class="card-desc">Wearable APIs (WHOOP, Oura, Garmin), Terra API агрегатор, PT-клиники, хирурги-ортопеды, страховые</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--cyan)">
+        <div class="card-title" style="color:var(--cyan);font-size:13px">Key Activities</div>
+        <div class="card-desc">Data aggregation с wearables, AI analytics pipeline, clinical protocol engine, computer vision ROM</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--text-sec)">
+        <div class="card-title" style="color:var(--text-sec);font-size:13px">Channels</div>
+        <div class="card-desc">App Store / PWA, surgeon referral network, content SEO (recovery guides), PT clinic partnership program</div>
+      </div>
+    </div>
+
+    <!-- Revenue Stack -->
+    <h3 class="reveal" style="font-family:var(--font-d);font-size:20px;font-weight:400;margin:40px 0 16px;color:var(--text)">Revenue Stack</h3>
+    <div class="rev-stack reveal">
+      <div class="rev-bar">
+        <div class="rev-bar-label" style="color:var(--text-muted)">Free</div>
+        <div class="rev-bar-track">
+          <div class="rev-bar-fill" style="width:15%;background:var(--bg-elevated);color:var(--text-sec)">Acquisition</div>
+        </div>
+        <div class="rev-bar-price" style="color:var(--text-muted)">$0</div>
+      </div>
+      <div class="rev-bar">
+        <div class="rev-bar-label" style="color:var(--primary-l)">Premium</div>
+        <div class="rev-bar-track">
+          <div class="rev-bar-fill" style="width:40%;background:linear-gradient(90deg,var(--primary-d),var(--primary))">Wearable + AI</div>
+        </div>
+        <div class="rev-bar-price" style="color:var(--primary-l)">$7/mo</div>
+      </div>
+      <div class="rev-bar">
+        <div class="rev-bar-label" style="color:var(--blue)">Pro</div>
+        <div class="rev-bar-track">
+          <div class="rev-bar-fill" style="width:65%;background:linear-gradient(90deg,var(--blue),#6ba3e0)">+ Provider sharing</div>
+        </div>
+        <div class="rev-bar-price" style="color:var(--blue)">$25/mo</div>
+      </div>
+      <div class="rev-bar">
+        <div class="rev-bar-label" style="color:var(--gold)">B2B Clinic</div>
+        <div class="rev-bar-track">
+          <div class="rev-bar-fill" style="width:90%;background:linear-gradient(90deg,var(--gold),#e8c87a)">Full platform</div>
+        </div>
+        <div class="rev-bar-price" style="color:var(--gold)">$199/mo</div>
+      </div>
+    </div>
+
+    <div class="insight insight-gold reveal" style="margin-top:32px">
+      <strong>RTM overlay:</strong> Remote Therapeutic Monitoring (CPT 98975-98981) позволяет клиникам получать $121-162/месяц за пациента от страховой.
+      Мы — технологический enabler для RTM. Клиника платит нам $199/mo, получает $2,000+/mo с 15 пациентов на RTM.
+    </div>
+  </section>
+
+  <!-- ═══════ 11 PRODUCT ARCHITECTURE ═══════ -->
+  <section id="gtm-arch" class="section">
+    <div class="section-num reveal">11 · Product Architecture</div>
+    <h2 class="section-title reveal">Архитектура продукта</h2>
+    <p class="section-desc reveal">Пять уровней стека: от датчиков до пациентского UI. Software-only, zero hardware.</p>
+
+    <!-- Architecture layer diagram -->
+    <div class="arch-stack reveal">
+      <div class="arch-layer" data-layer="5">
+        <div class="arch-layer-num">5</div>
+        <div class="arch-layer-title" style="color:var(--primary-l)">Patient & Provider UI</div>
+        <div class="arch-layer-desc">PWA (Next.js 16), мобильное приложение, provider dashboard — recovery timeline, exercise video, supplement log</div>
+      </div>
+      <div class="arch-layer" data-layer="4">
+        <div class="arch-layer-num">4</div>
+        <div class="arch-layer-title" style="color:var(--purple)">AI Intelligence</div>
+        <div class="arch-layer-desc">Recovery predictions, adaptive session intensity, HRV×ROM correlations, red flag detection, sleep→supplement optimization</div>
+      </div>
+      <div class="arch-layer" data-layer="3">
+        <div class="arch-layer-num">3</div>
+        <div class="arch-layer-title" style="color:var(--blue)">Unified Health Data</div>
+        <div class="arch-layer-desc">Composite Recovery Score, sleep quality, pain trends, supplement timing, ROM progression — всё в единой модели</div>
+      </div>
+      <div class="arch-layer" data-layer="2">
+        <div class="arch-layer-num">2</div>
+        <div class="arch-layer-title" style="color:var(--gold)">Integration Layer</div>
+        <div class="arch-layer-desc">WHOOP API, Oura API, Garmin Connect, Fitbit Web API, BLE goniometers, Terra API (20+ wearables)</div>
+      </div>
+      <div class="arch-layer" data-layer="1">
+        <div class="arch-layer-num">1</div>
+        <div class="arch-layer-title" style="color:var(--text-sec)">Data Sources</div>
+        <div class="arch-layer-desc">Wearable sensors, manual patient input, camera (MediaPipe CV ROM), BLE goniometers, clinical records</div>
+      </div>
+    </div>
+
+    <!-- Data Flow -->
+    <h3 class="reveal" style="font-family:var(--font-d);font-size:20px;font-weight:400;margin:48px 0 16px;color:var(--text)">Data Flow</h3>
+    <div class="card-grid-3 reveal">
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div class="card-title" style="font-size:13px;color:var(--gold)">Wearable Pipeline</div>
+        <div class="card-desc" style="font-size:12px;line-height:1.7">
+          Wearable → API/Terra → Supabase Edge Function → PostgreSQL → AI pipeline → Dashboard
+        </div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--primary)">
+        <div class="card-title" style="font-size:13px;color:var(--primary-l)">Manual Input</div>
+        <div class="card-desc" style="font-size:12px;line-height:1.7">
+          Patient input → IndexedDB (offline-first) → Background Sync → PostgreSQL → Recovery Score recalc
+        </div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--purple)">
+        <div class="card-title" style="font-size:13px;color:var(--purple)">Computer Vision</div>
+        <div class="card-desc" style="font-size:12px;line-height:1.7">
+          Camera → MediaPipe Pose → ROM measurement (ICC 0.91) → DB → trend analysis → adaptive sessions
+        </div>
+      </div>
+    </div>
+
+    <!-- What AI Actually Does -->
+    <h3 class="reveal" style="font-family:var(--font-d);font-size:20px;font-weight:400;margin:48px 0 16px;color:var(--text)">Что AI реально делает</h3>
+    <p class="reveal" style="color:var(--text-sec);font-size:14px;margin-bottom:24px">Конкретные use-cases, а не buzzwords. Каждый пункт имеет клиническое обоснование.</p>
+    <div class="card-grid reveal" style="grid-template-columns:repeat(2,1fr)">
+      <div class="card">
+        <div class="card-title" style="font-size:14px">HRV × ROM Корреляция</div>
+        <div class="card-desc">Анализ Heart Rate Variability от wearable и Range of Motion. Если HRV низкий (перетренированность) — AI снижает интенсивность сессии. Если высокий — можно нагружать.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:14px">Sleep → Supplement Timing</div>
+        <div class="card-desc">Качество сна (WHOOP/Oura) влияет на рекомендации по нутрицевтикам. Плохой сон → добавить магний вечером, сдвинуть коллаген на утро.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:14px">Pain Trend → Red Flags</div>
+        <div class="card-desc">Анализ трендов боли за 7-14 дней. Резкий скачок или нетипичный паттерн → alert пациенту + уведомление врачу. Early warning system.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:14px">Composite Recovery Score</div>
+        <div class="card-desc">Единая метрика из 6+ источников: ROM, pain, sleep, HRV, compliance, supplement adherence. Вес каждого фактора адаптируется по фазе реабилитации.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:14px">Computer Vision ROM</div>
+        <div class="card-desc">MediaPipe Pose estimation → точное измерение углов сгибания/разгибания через камеру. ICC 0.91 vs гониометр. Не нужно ехать в клинику для измерений.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:14px">Adaptive Session Engine</div>
+        <div class="card-desc">AI собирает все сигналы (HRV, sleep, pain, ROM progress) и адаптирует сегодняшнюю тренировку: количество повторов, нагрузку, тип упражнений.</div>
+      </div>
+    </div>
+
+    <div class="insight reveal" style="margin-top:32px">
+      <strong>Ключевой инсайт:</strong> Мы — не AI-компания, которая делает всё сама. Мы — intelligence layer,
+      который берёт данные из proven hardware (WHOOP, Oura) и proven science (PT protocols),
+      и объединяет их в то, чего ни один из них не может предложить по отдельности.
+    </div>
+  </section>
+
+  <!-- ═══════ 12 MARKET DEFINITION ═══════ -->
+  <section id="gtm-market" class="section">
+    <div class="section-num reveal">12 · Market Definition</div>
+    <h2 class="section-title reveal">Определение рынка</h2>
+    <p class="section-desc reveal">Три пересекающихся рынка формируют opportunity space для Elbow Recovery.</p>
+
+    <div class="card-grid-3 reveal">
+      <div class="card" style="border-top:2px solid var(--primary)">
+        <div class="card-title" style="color:var(--primary-l)">Digital MSK & Rehab</div>
+        <div class="card-desc">Цифровая терапия для MSK-состояний: физиотерапия, послеоперационная реабилитация, хроническая боль. Модели: B2B2C (employer → patient), DTx (prescription digital therapeutics).</div>
+        <div style="margin-top:16px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Размер 2025</span><strong style="color:var(--primary-l)">$4.6B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Прогноз 2030</span><strong>$12.8B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--text-muted)">CAGR</span><strong>22.7%</strong></div>
+        </div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--blue)">
+        <div class="card-title" style="color:var(--blue)">Wearable Health Data</div>
+        <div class="card-desc">Носимые устройства + API-экосистемы для сбора биометрии: HRV, sleep, recovery, strain. Ключевые: WHOOP, Oura, Garmin, Fitbit. Terra API как мидлварь.</div>
+        <div style="margin-top:16px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Размер 2025</span><strong style="color:var(--blue)">$71.9B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Прогноз 2030</span><strong>$168B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--text-muted)">CAGR</span><strong>18.5%</strong></div>
+        </div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--purple)">
+        <div class="card-title" style="color:var(--purple)">Rehab Software Platforms</div>
+        <div class="card-desc">SaaS для клиник и PT-практик: exercise builders, patient engagement, remote monitoring, FHIR-интеграции. B2B модель с PEPM pricing.</div>
+        <div style="margin-top:16px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Размер 2025</span><strong style="color:var(--purple)">$1.54B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Прогноз 2030</span><strong>$3.82B</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--text-muted)">CAGR</span><strong>19.9%</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight insight-gold reveal" style="margin-top:32px">
+      <strong>Intersection = наш рынок:</strong> Post-surgical rehabilitation + wearable biometrics + patient self-management.
+      Ни один игрок не объединяет все три: Hinge Health — B2B без wearable-first подхода. WHOOP — data без rehab протоколов.
+      Kaia/Sword — exercise-only без supplements/sleep/biometrics. Наша позиция: <em>patient-first recovery OS с wearable intelligence</em>.
+    </div>
+  </section>
+
+  <!-- ═══════ 13 TAM / SAM / SOM ═══════ -->
+  <section id="gtm-tam" class="section">
+    <div class="section-num reveal">13 · Market Sizing</div>
+    <h2 class="section-title reveal">TAM / SAM / SOM</h2>
+    <p class="section-desc reveal">Bottom-up расчёт по методологии YC. Объективные данные, не гипотезы.</p>
+
+    <div class="tam-rings reveal">
+      <div class="tam-ring">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle cx="90" cy="90" r="80" fill="none" stroke="var(--gold)" stroke-width="8"
+            stroke-dasharray="502.6" stroke-dashoffset="502.6" stroke-linecap="round"
+            class="tam-circle" data-target="0"/>
+        </svg>
+        <div class="tam-ring-label">
+          <div class="tam-ring-value" style="color:var(--gold)">$92B</div>
+          <div class="tam-ring-name">TAM</div>
+        </div>
+        <div class="tam-ring-sub">Total Addressable Market (2025)</div>
+      </div>
+      <div class="tam-ring">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r="65" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle cx="75" cy="75" r="65" fill="none" stroke="var(--blue)" stroke-width="8"
+            stroke-dasharray="408.4" stroke-dashoffset="408.4" stroke-linecap="round"
+            class="tam-circle" data-target="0"/>
+        </svg>
+        <div class="tam-ring-label">
+          <div class="tam-ring-value" style="color:var(--blue)">$3.2B</div>
+          <div class="tam-ring-name">SAM</div>
+        </div>
+        <div class="tam-ring-sub">Serviceable Addressable Market</div>
+      </div>
+      <div class="tam-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--primary)" stroke-width="8"
+            stroke-dasharray="314.1" stroke-dashoffset="314.1" stroke-linecap="round"
+            class="tam-circle" data-target="0"/>
+        </svg>
+        <div class="tam-ring-label">
+          <div class="tam-ring-value" style="color:var(--primary-l)">$161K</div>
+          <div class="tam-ring-name">SOM Y1</div>
+        </div>
+        <div class="tam-ring-sub">Year 1 Realistic Revenue</div>
+      </div>
+    </div>
+
+    <!-- TAM breakdown -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">TAM — декомпозиция ($92B)</h3>
+    <div class="reveal">
+      <table class="data-table">
+        <thead><tr><th>Сегмент</th><th style="text-align:right">2025</th><th style="text-align:right">2030</th><th style="text-align:right">CAGR</th></tr></thead>
+        <tbody>
+          <tr><td>Digital MSK Therapeutics</td><td style="text-align:right">$4.6B</td><td style="text-align:right">$12.8B</td><td style="text-align:right">22.7%</td></tr>
+          <tr><td>Wearable Health Devices</td><td style="text-align:right">$71.9B</td><td style="text-align:right">$168B</td><td style="text-align:right">18.5%</td></tr>
+          <tr><td>Rehab Software Platforms</td><td style="text-align:right">$1.54B</td><td style="text-align:right">$3.82B</td><td style="text-align:right">19.9%</td></tr>
+          <tr><td>DTx (Prescription Digital)</td><td style="text-align:right">$9.73B</td><td style="text-align:right">$56.7B</td><td style="text-align:right">21.6%</td></tr>
+          <tr><td>CGM Market (Adjacent)</td><td style="text-align:right">$15.3B</td><td style="text-align:right">$31.4B</td><td style="text-align:right">15.4%</td></tr>
+          <tr style="background:var(--bg-elevated)"><td><strong>Total Intersection</strong></td><td style="text-align:right"><strong style="color:var(--gold)">~$92B</strong></td><td style="text-align:right"><strong>~$200B</strong></td><td style="text-align:right"><strong>~17%</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SAM definition -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">SAM — $2-4B: post-surgical rehab + digital tools</h3>
+    <div class="card-grid-2 reveal">
+      <div class="card">
+        <div class="card-title">Верхняя граница</div>
+        <div class="card-desc" style="font-size:13px;line-height:1.8">
+          <strong>14.4M</strong> ортопедических операций/год (US+EU+RU)<br>
+          × <strong>35%</strong> digital rehab adoption rate<br>
+          × <strong>$84</strong> ARPU (Premium $7/мес × 12)<br>
+          = <strong style="color:var(--blue)">$423M</strong> B2C-сегмент<br><br>
+          + <strong>B2B:</strong> 45K PT-клиник × $2,400/год = <strong style="color:var(--blue)">$108M</strong><br>
+          + <strong>RTM:</strong> CPT 98975-98981, $121-162/мес × 6 мес = $726-972/пациент
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Россия — sub-market</div>
+        <div class="card-desc" style="font-size:13px;line-height:1.8">
+          <strong>1.58M</strong> ортопедических процедур/год<br>
+          × <strong>8%</strong> digital adoption (low base)<br>
+          × <strong>₽500/мес</strong> ($5.50 ARPU)<br>
+          = <strong style="color:var(--primary-l)">$834K</strong>/год addressable<br><br>
+          Upside: телемедицина CAGR 25%+, DLT license path.<br>
+          Risk: платёжная инфраструктура, валютные ограничения.
+        </div>
+      </div>
+    </div>
+
+    <!-- SOM funnel -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">SOM Year 1 — Bottom-Up Funnel</h3>
+    <div class="funnel reveal">
+      <div class="funnel-step">
+        <div class="funnel-step-name">Organic reach</div>
+        <div class="funnel-bar"><div class="funnel-fill" style="background:var(--primary);width:0%" data-width="100"></div></div>
+        <div class="funnel-num" style="color:var(--primary-l)">50,000</div>
+      </div>
+      <div class="funnel-step">
+        <div class="funnel-step-name">Visitors</div>
+        <div class="funnel-bar"><div class="funnel-fill" style="background:var(--blue);width:0%" data-width="40"></div></div>
+        <div class="funnel-num" style="color:var(--blue)">5,000</div>
+      </div>
+      <div class="funnel-step">
+        <div class="funnel-step-name">Signups</div>
+        <div class="funnel-bar"><div class="funnel-fill" style="background:var(--purple);width:0%" data-width="16"></div></div>
+        <div class="funnel-num" style="color:var(--purple)">800</div>
+      </div>
+      <div class="funnel-step">
+        <div class="funnel-step-name">Active (WAU)</div>
+        <div class="funnel-bar"><div class="funnel-fill" style="background:var(--gold);width:0%" data-width="6"></div></div>
+        <div class="funnel-num" style="color:var(--gold)">320</div>
+      </div>
+      <div class="funnel-step">
+        <div class="funnel-step-name">Premium</div>
+        <div class="funnel-bar"><div class="funnel-fill" style="background:var(--cyan);width:0%" data-width="1.5"></div></div>
+        <div class="funnel-num" style="color:var(--cyan)">42</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-sec)" class="reveal">
+      42 Premium × $7/мес × 12 = <strong style="color:var(--primary-l)">$3,528 ARR</strong> (conservative) →
+      Optimistic: 1,920 signups × 12% conv = <strong style="color:var(--gold)">$161K ARR</strong>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>YC benchmark:</strong> Хорошие SaaS компании достигают $1M ARR за 12-18 месяцев.
+      С wearable integration (2.8-3.5x revenue multiplier) и B2B pivot после Year 1,
+      Year 3 target: <strong style="color:var(--primary-l)">$2-5M ARR</strong>.
+      RTM reimbursement ($726-972/patient) — game changer для unit economics.
+    </div>
+  </section>
+
+  <!-- ═══════ 14 COMPETITIVE LANDSCAPE ═══════ -->
+  <section id="gtm-landscape" class="section">
+    <div class="section-num reveal">14 · Competitive Landscape</div>
+    <h2 class="section-title reveal">Карта конкурентов</h2>
+    <p class="section-desc reveal">Позиционирование по двум осям: Clinical Depth (протоколы, evidence) × Data Richness (wearables, биометрия).</p>
+
+    <div class="landscape-container reveal">
+      <div class="matrix-line-h"></div>
+      <div class="matrix-line-v"></div>
+      <div class="matrix-axis-x">Data Richness →</div>
+      <div class="matrix-axis-y">Clinical Depth →</div>
+
+      <!-- Quadrant labels -->
+      <div class="matrix-quadrant" style="left:25%;top:18%;font-size:9px;opacity:0.35">Clinical + Manual</div>
+      <div class="matrix-quadrant" style="left:75%;top:18%;font-size:9px;opacity:0.35">Full Stack</div>
+      <div class="matrix-quadrant" style="left:25%;top:82%;font-size:9px;opacity:0.35">Basic Tools</div>
+      <div class="matrix-quadrant" style="left:75%;top:82%;font-size:9px;opacity:0.35">Data-Only</div>
+
+      <!-- Competitors -->
+      <div class="landscape-dot" style="left:72%;top:15%;background:var(--red-bg);border-color:var(--red)" title="Hinge Health"></div>
+      <div class="landscape-label" style="left:72%;top:15%;color:var(--red)">Hinge Health</div>
+
+      <div class="landscape-dot" style="left:65%;top:22%;background:var(--purple-bg);border-color:var(--purple)" title="Sword Health"></div>
+      <div class="landscape-label" style="left:65%;top:22%;color:var(--purple)">Sword Health</div>
+
+      <div class="landscape-dot" style="left:30%;top:28%;background:var(--blue-bg);border-color:var(--blue)" title="Kaia Health"></div>
+      <div class="landscape-label" style="left:30%;top:28%;color:var(--blue)">Kaia Health</div>
+
+      <div class="landscape-dot" style="left:82%;top:60%;background:var(--cyan-bg);border-color:var(--cyan)" title="WHOOP"></div>
+      <div class="landscape-label" style="left:82%;top:60%;color:var(--cyan)">WHOOP</div>
+
+      <div class="landscape-dot" style="left:75%;top:55%;background:var(--cyan-bg);border-color:var(--cyan)" title="Oura"></div>
+      <div class="landscape-label" style="left:75%;top:55%;color:var(--cyan)">Oura</div>
+
+      <div class="landscape-dot" style="left:25%;top:35%;background:var(--gold-bg);border-color:var(--gold)" title="RecoveryPlan"></div>
+      <div class="landscape-label" style="left:25%;top:35%;color:var(--gold)">RecoveryPlan</div>
+
+      <div class="landscape-dot" style="left:20%;top:65%;background:var(--bg-elevated);border-color:var(--text-muted)" title="Medisafe"></div>
+      <div class="landscape-label" style="left:20%;top:65%;color:var(--text-muted)">Medisafe</div>
+
+      <div class="landscape-dot" style="left:35%;top:72%;background:var(--bg-elevated);border-color:var(--text-muted)" title="MyTherapy"></div>
+      <div class="landscape-label" style="left:35%;top:72%;color:var(--text-muted)">MyTherapy</div>
+
+      <div class="landscape-dot" style="left:55%;top:38%;background:var(--blue-bg);border-color:var(--blue)" title="Omada Health"></div>
+      <div class="landscape-label" style="left:55%;top:38%;color:var(--blue)">Omada</div>
+
+      <div class="landscape-dot" style="left:60%;top:68%;background:var(--gold-bg);border-color:var(--gold)" title="Signos"></div>
+      <div class="landscape-label" style="left:60%;top:68%;color:var(--gold)">Signos</div>
+
+      <!-- US — pulsing dot -->
+      <div class="landscape-us" style="left:52%;top:30%" title="Elbow Recovery (target)"></div>
+      <div class="landscape-label" style="left:52%;top:30%;color:var(--primary-l);font-weight:700;font-size:11px">Elbow Recovery ★</div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px" class="reveal">
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--red);display:inline-block"></span> Enterprise MSK ($1B+)</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--cyan);display:inline-block"></span> Wearable Platforms</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--blue);display:inline-block"></span> Digital Health</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--text-muted);display:inline-block"></span> Pill/Supplement Trackers</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--primary);display:inline-block;animation:pulse-ring 2s infinite"></span> Target Position</span>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>White space:</strong> Верхний правый квадрант (Clinical + Data-Rich) занят только enterprise-игроками ($500M+ funding).
+      Наша стратегия: зайти через <em>нижний-правый</em> (data-rich через wearables) и двигаться вверх (clinical depth через протоколы).
+      Классический disruptive innovation — атакуем снизу.
+    </div>
+  </section>
+
+  <!-- ═══════ 15 FEATURE MATRIX ═══════ -->
+  <section id="gtm-matrix" class="section">
+    <div class="section-num reveal">15 · Feature Comparison</div>
+    <h2 class="section-title reveal">Матрица функций</h2>
+    <p class="section-desc reveal">10 ключевых возможностей × 8 конкурентов. Зелёная точка = есть, жёлтая = частично, серая = нет.</p>
+
+    <div class="reveal" style="overflow-x:auto">
+      <table class="data-table" style="min-width:900px">
+        <thead>
+          <tr>
+            <th style="position:sticky;left:0;background:var(--bg-elevated);z-index:1">Feature</th>
+            <th class="cell-center" style="color:var(--primary-l)">Мы</th>
+            <th class="cell-center">Hinge</th>
+            <th class="cell-center">Sword</th>
+            <th class="cell-center">Kaia</th>
+            <th class="cell-center">WHOOP</th>
+            <th class="cell-center">Oura</th>
+            <th class="cell-center">Medisafe</th>
+            <th class="cell-center">Omada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Exercise Protocols</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">ROM Tracking (AI)</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Wearable Integration</td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Supplement Tracking</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Sleep Protocol</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Pain Diary + Red Flags</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Gamification (XP/Streaks)</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-partial"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Recovery Score</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">B2B / Provider Portal</td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+          </tr>
+          <tr>
+            <td style="position:sticky;left:0;background:var(--bg-surface)">Offline-First PWA</td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-yes"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+            <td class="cell-center"><span class="dot dot-no"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px" class="reveal">
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--primary-l)">8/10</div>
+        <div style="font-size:12px;color:var(--text-muted)">Наш охват фич</div>
+      </div>
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--red)">0</div>
+        <div style="font-size:12px;color:var(--text-muted)">Конкурентов с 8+</div>
+      </div>
+      <div style="padding:20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:600;color:var(--gold)">2</div>
+        <div style="font-size:12px;color:var(--text-muted)">Уникальных фич (Supplements + Sleep Protocol)</div>
+      </div>
+    </div>
+
+    <div class="insight insight-gold reveal" style="margin-top:24px">
+      <strong>Ключевой инсайт:</strong> Ни один конкурент не покрывает более 6 из 10 фич. Наш текущий gap — только Wearable Integration и B2B Portal.
+      После Phase A+B (backend + WHOOP) мы станем единственным решением с 9/10 покрытием. Supplement tracking — <em>наша</em> уникальная ниша.
+    </div>
+  </section>
+
+  <!-- ═══════ 16 COMPETITOR DEEP DIVES ═══════ -->
+  <section id="gtm-deepdive" class="section">
+    <div class="section-num reveal">16 · Competitor Deep Dives</div>
+    <h2 class="section-title reveal">Разбор ключевых игроков</h2>
+    <p class="section-desc reveal">Финансы, модель, сильные и слабые стороны топ-5 конкурентов.</p>
+
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <!-- Hinge Health -->
+      <div class="comp-card reveal">
+        <div class="comp-header">
+          <div class="comp-logo" style="background:linear-gradient(135deg,#ff4d4d,#cc0000)">H</div>
+          <div>
+            <div class="comp-name">Hinge Health</div>
+            <div class="comp-tagline">Enterprise MSK Digital Therapeutics · IPO May 2025</div>
+          </div>
+        </div>
+        <div class="comp-stats">
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--red)">$2.5-3B</div><div class="comp-stat-lbl">Market Cap (NYSE)</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--gold)">$588M</div><div class="comp-stat-lbl">Revenue FY2025</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--primary-l)">24.6M</div><div class="comp-stat-lbl">Covered Lives</div></div>
+        </div>
+        <div class="comp-desc">
+          B2B2C модель: работодатели → сотрудники. TrueMotion AI CV + Enso FDA-cleared TENS device, PT coaching.
+          GAAP profitable FY2025, $180M FCF (31% margin). Revenue: $588M (2025, +51% YoY) → $732M (2026E). PEPM pricing.
+          <br><br>
+          <strong style="color:var(--primary-l)">Strengths:</strong> Масштаб, clinical evidence (RCTs), employer relationships, profitability.
+          <br><strong style="color:var(--red)">Weaknesses:</strong> Нет supplement tracking, нет consumer product, no sleep protocol, patient не владеет данными.
+        </div>
+        <div class="comp-tags">
+          <span class="comp-tag">B2B2C</span><span class="comp-tag">PEPM</span><span class="comp-tag">1,700 employers</span><span class="comp-tag">NYSE: HNGE</span>
+        </div>
+      </div>
+
+      <!-- Sword Health -->
+      <div class="comp-card reveal">
+        <div class="comp-header">
+          <div class="comp-logo" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)">S</div>
+          <div>
+            <div class="comp-name">Sword Health</div>
+            <div class="comp-tagline">AI-Powered Physical Therapy · Acquired Kaia Health (Jan 2026)</div>
+          </div>
+        </div>
+        <div class="comp-stats">
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--purple)">$4.0B</div><div class="comp-stat-lbl">Valuation</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--gold)">$285M</div><div class="comp-stat-lbl">Kaia Acquisition</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--primary-l)">3,200+</div><div class="comp-stat-lbl">Enterprise Clients</div></div>
+        </div>
+        <div class="comp-desc">
+          Собственный motion-tracking таблет (Sword Kit). $799/member/year pricing. DiGA certified (Германия).
+          Приобрели Kaia Health за $285M в январе 2026 — консолидация рынка. AI Therapist + human coaching hybrid.
+          <br><br>
+          <strong style="color:var(--primary-l)">Strengths:</strong> Проприетарный hardware, DiGA revenue, aggressive M&A, Apple Watch integration.
+          <br><strong style="color:var(--red)">Weaknesses:</strong> $799/year pricing (elitist), enterprise-only, нет consumer tier, no supplement/sleep tracking.
+        </div>
+        <div class="comp-tags">
+          <span class="comp-tag">B2B</span><span class="comp-tag">$799/yr</span><span class="comp-tag">DiGA</span><span class="comp-tag">M&A</span>
+        </div>
+      </div>
+
+      <!-- WHOOP -->
+      <div class="comp-card reveal">
+        <div class="comp-header">
+          <div class="comp-logo" style="background:linear-gradient(135deg,#00b388,#008060)">W</div>
+          <div>
+            <div class="comp-name">WHOOP</div>
+            <div class="comp-tagline">Performance & Recovery Wearable · WHOOP 5.0 (2025)</div>
+          </div>
+        </div>
+        <div class="comp-stats">
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--cyan)">$3.6B</div><div class="comp-stat-lbl">Valuation</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--gold)">$30</div><div class="comp-stat-lbl">/мес subscription</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--primary-l)">ECG</div><div class="comp-stat-lbl">WHOOP 5.0 (new)</div></div>
+        </div>
+        <div class="comp-desc">
+          Hardware-as-a-service: device бесплатно, подписка $30/мес. Recovery Score — золотой стандарт.
+          WHOOP 5.0: 14-day battery, ECG, blood pressure (beta), на 38% тоньше. Free API для разработчиков.
+          <br><br>
+          <strong style="color:var(--primary-l)">Strengths:</strong> Лучший Recovery Score, open API, сильный бренд (атлеты), 24/7 biometrics.
+          <br><strong style="color:var(--red)">Weaknesses:</strong> Нет rehab протоколов, нет exercise guidance, нет clinical use case, дорого ($360/yr).
+        </div>
+        <div class="comp-tags">
+          <span class="comp-tag">D2C</span><span class="comp-tag">$30/мес</span><span class="comp-tag">Free API</span><span class="comp-tag">ECG (5.0)</span>
+        </div>
+      </div>
+
+      <!-- Oura -->
+      <div class="comp-card reveal">
+        <div class="comp-header">
+          <div class="comp-logo" style="background:linear-gradient(135deg,#b3b3b3,#666)">O</div>
+          <div>
+            <div class="comp-name">Oura Ring</div>
+            <div class="comp-tagline">Sleep & Readiness Tracking Ring · Gen 4 (2025)</div>
+          </div>
+        </div>
+        <div class="comp-stats">
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--text)">$11B</div><div class="comp-stat-lbl">Valuation (Oct 2025)</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--gold)">$1B+</div><div class="comp-stat-lbl">Revenue 2025</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--primary-l)">5.5M</div><div class="comp-stat-lbl">Rings Sold</div></div>
+        </div>
+        <div class="comp-desc">
+          Кольцо с фокусом на сон и readiness. Readiness Score, Sleep Score, Stress Score. Cardiovascular Age metric.
+          Resilience Score (2025), cycle tracking. 5.5M rings sold (3M in 2025 alone). $900M Series E (Oct 2025). IPO candidate.
+          <br><br>
+          <strong style="color:var(--primary-l)">Strengths:</strong> Лучший sleep tracking, незаметный, long battery, open API + webhooks.
+          <br><strong style="color:var(--red)">Weaknesses:</strong> Нет strain/exercise tracking, нет rehab, нет supplement tracking, форм-фактор не для всех.
+        </div>
+        <div class="comp-tags">
+          <span class="comp-tag">D2C</span><span class="comp-tag">$6/мес</span><span class="comp-tag">Free API</span><span class="comp-tag">Sleep-first</span>
+        </div>
+      </div>
+
+      <!-- Omada Health -->
+      <div class="comp-card reveal">
+        <div class="comp-header">
+          <div class="comp-logo" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">Om</div>
+          <div>
+            <div class="comp-name">Omada Health</div>
+            <div class="comp-tagline">Digital Chronic Disease Management · Public (NYSE)</div>
+          </div>
+        </div>
+        <div class="comp-stats">
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--blue)">$672M</div><div class="comp-stat-lbl">Market Cap</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--gold)">MSK</div><div class="comp-stat-lbl">Expansion (2024+)</div></div>
+          <div class="comp-stat"><div class="comp-stat-val" style="color:var(--primary-l)">1,900+</div><div class="comp-stat-lbl">Enterprise Clients</div></div>
+        </div>
+        <div class="comp-desc">
+          Начинали с диабета/ожирения, расширяются в MSK. FDA-cleared для diabetes prevention.
+          Multi-condition platform: diabetes + hypertension + MSK + behavioral health. Scale advantage.
+          <br><br>
+          <strong style="color:var(--primary-l)">Strengths:</strong> Multi-condition (cross-sell), FDA clearances, employer relationships, scale.
+          <br><strong style="color:var(--red)">Weaknesses:</strong> MSK — не core product, generic exercises, no wearable-first approach, не для post-surgical.
+        </div>
+        <div class="comp-tags">
+          <span class="comp-tag">B2B2C</span><span class="comp-tag">Multi-condition</span><span class="comp-tag">NYSE: OMDH</span><span class="comp-tag">FDA-cleared</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight insight-red reveal" style="margin-top:32px">
+      <strong>Competitive moat analysis:</strong> Все enterprise-игроки (Hinge, Sword, Omada) зашли через B2B2C с $100M+ funding.
+      Мы не конкурируем head-on. Наша стратегия: <em>patient-first consumer product → clinical evidence → B2B upsell</em>.
+      PLG (Product-Led Growth) + supplement niche = unique wedge that enterprises can't easily replicate.
+    </div>
+  </section>
+
+  <!-- ═══════ 17 UNIT ECONOMICS ═══════ -->
+  <section id="gtm-unit" class="section">
+    <div class="section-num reveal">17 · Unit Economics</div>
+    <h2 class="section-title reveal">Unit Economics</h2>
+    <p class="section-desc reveal">Ключевые метрики для инвестора. YC benchmark: LTV:CAC > 3:1, payback < 12 мес.</p>
+
+    <div class="econ-grid reveal">
+      <div class="econ-card" style="border-top:2px solid var(--primary)">
+        <div class="econ-val" style="color:var(--primary-l)">$15-40</div>
+        <div class="econ-lbl">CAC Target</div>
+        <div class="econ-sub">Organic + ASO + Content SEO. Health apps avg: $5-200</div>
+      </div>
+      <div class="econ-card" style="border-top:2px solid var(--gold)">
+        <div class="econ-val" style="color:var(--gold)">$168</div>
+        <div class="econ-lbl">LTV (Premium)</div>
+        <div class="econ-sub">$7/мес × 24 мес avg lifespan. Wearable users: 3.5x ($588)</div>
+      </div>
+      <div class="econ-card" style="border-top:2px solid var(--blue)">
+        <div class="econ-val" style="color:var(--blue)">4.2:1</div>
+        <div class="econ-lbl">LTV:CAC</div>
+        <div class="econ-sub">Target > 3:1. With wearable: 14.7:1</div>
+      </div>
+      <div class="econ-card" style="border-top:2px solid var(--cyan)">
+        <div class="econ-val" style="color:var(--cyan)">&lt;6mo</div>
+        <div class="econ-lbl">CAC Payback</div>
+        <div class="econ-sub">$40 CAC / $7/мес = 5.7 мес. Industry avg: 12+ мес</div>
+      </div>
+    </div>
+
+    <!-- Key metrics -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">Целевые метрики (YC benchmarks)</h3>
+    <div class="reveal">
+      <table class="data-table">
+        <thead>
+          <tr><th>Метрика</th><th style="text-align:right">Industry Avg</th><th style="text-align:right">Наш Target</th><th style="text-align:right">Top Quartile</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>DAU/MAU Ratio</td><td style="text-align:right;color:var(--text-muted)">15-20%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">40%+</td><td style="text-align:right">50%+ (WHOOP)</td></tr>
+          <tr><td>Monthly Churn</td><td style="text-align:right;color:var(--text-muted)">6-8%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">&lt;5%</td><td style="text-align:right">2% (Oura)</td></tr>
+          <tr><td>Free→Premium Conversion</td><td style="text-align:right;color:var(--text-muted)">2-5%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">8-12%</td><td style="text-align:right">15%+ (Headspace)</td></tr>
+          <tr><td>D7 Retention</td><td style="text-align:right;color:var(--text-muted)">15-25%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">50%+</td><td style="text-align:right">65% (Noom)</td></tr>
+          <tr><td>D30 Retention</td><td style="text-align:right;color:var(--text-muted)">5-10%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">30%+</td><td style="text-align:right">40% (WHOOP)</td></tr>
+          <tr><td>NPS Score</td><td style="text-align:right;color:var(--text-muted)">20-30</td><td style="text-align:right;color:var(--primary-l);font-weight:600">50+</td><td style="text-align:right">72 (Peloton)</td></tr>
+          <tr><td>Gross Margin</td><td style="text-align:right;color:var(--text-muted)">60-70%</td><td style="text-align:right;color:var(--primary-l);font-weight:600">85%+</td><td style="text-align:right">90%+ (pure SaaS)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>Revenue multiplier:</strong> Wearable-connected users тратят в 2.8-3.5x больше и показывают на 40% меньше churn.
+      RTM reimbursement (CPT 98975-98981) добавляет $121-162/мес на пациента. С RTM, LTV Premium пациента:
+      $7/мес (sub) + $142/мес (RTM avg) = <strong style="color:var(--gold)">$149/мес = $3,576 LTV</strong>. LTV:CAC при этом = <strong>89:1</strong>.
+    </div>
+  </section>
+
+  <!-- ═══════ 18 GTM STRATEGY ═══════ -->
+  <section id="gtm-strategy" class="section">
+    <div class="section-num reveal">18 · GTM Strategy</div>
+    <h2 class="section-title reveal">Стратегия выхода на рынок</h2>
+    <p class="section-desc reveal">PLG (Product-Led Growth) + wedge strategy. Classically YC: start narrow, own the niche, expand.</p>
+
+    <!-- Phase progression -->
+    <div class="card-grid-3 reveal">
+      <div class="card" style="border-left:3px solid var(--primary)">
+        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Phase 1 · Month 1-6</div>
+        <div class="card-title">B2C: Patient PLG</div>
+        <div class="card-desc">
+          Organic growth: SEO, Reddit (r/physicaltherapy, r/WHOOP), product reviews.
+          Free tier = complete rehab tracker. Premium = wearable integration + AI.
+          Target: 500 активных пользователей.
+        </div>
+        <div class="card-tag tag-green">Current Focus</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--blue)">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Phase 2 · Month 6-12</div>
+        <div class="card-title">B2C2B: PT Referral Loop</div>
+        <div class="card-desc">
+          Пациенты показывают отчёты PT → PT запрашивает Pro аккаунт.
+          "Doctor Report" = viral loop. Provider dashboard как upsell.
+          Target: 50 PT-практик.
+        </div>
+        <div class="card-tag tag-blue">Next Phase</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--gold)">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Phase 3 · Month 12-24</div>
+        <div class="card-title">B2B: Clinic Platform</div>
+        <div class="card-desc">
+          White-label для ортопедических клиник. RTM billing integration (CPT codes).
+          Multi-protocol (плечо, колено, спина). FHIR R4 export.
+          Target: $1M ARR.
+        </div>
+        <div class="card-tag tag-gold">Scale Phase</div>
+      </div>
+    </div>
+
+    <!-- Distribution channels -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">Каналы дистрибуции (приоритизация)</h3>
+    <div class="reveal" style="overflow-x:auto">
+      <table class="data-table" style="min-width:700px">
+        <thead><tr><th>Канал</th><th class="cell-center">Приоритет</th><th style="text-align:right">CAC est.</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>Organic SEO + ASO</td><td class="cell-center"><span class="channel-priority priority-p0">P0</span></td><td style="text-align:right;color:var(--primary-l)">$5-15</td><td style="font-size:12px;color:var(--text-sec)">"elbow recovery app", "post surgery rehab" — low competition, high intent</td></tr>
+          <tr><td>Reddit / Communities</td><td class="cell-center"><span class="channel-priority priority-p0">P0</span></td><td style="text-align:right;color:var(--primary-l)">$0-10</td><td style="font-size:12px;color:var(--text-sec)">r/physicaltherapy (350K), r/WHOOP (45K), r/elbowrecovery — authentic sharing</td></tr>
+          <tr><td>Content Marketing</td><td class="cell-center"><span class="channel-priority priority-p1">P1</span></td><td style="text-align:right;color:var(--blue)">$10-25</td><td style="font-size:12px;color:var(--text-sec)">Blog: "WHOOP для реабилитации", "HRV после операции" — educational content</td></tr>
+          <tr><td>PT / Surgeon Referral</td><td class="cell-center"><span class="channel-priority priority-p1">P1</span></td><td style="text-align:right;color:var(--blue)">$20-50</td><td style="font-size:12px;color:var(--text-sec)">Doctor Report → PT asks "what app is this?" → organic B2B loop</td></tr>
+          <tr><td>Product Hunt / HN</td><td class="cell-center"><span class="channel-priority priority-p1">P1</span></td><td style="text-align:right;color:var(--blue)">$0</td><td style="font-size:12px;color:var(--text-sec)">One-time spike. "Open-source rehab tracker" positioning → developer appeal</td></tr>
+          <tr><td>WHOOP Partnership</td><td class="cell-center"><span class="channel-priority priority-p2">P2</span></td><td style="text-align:right;color:var(--gold)">$0-5</td><td style="font-size:12px;color:var(--text-sec)">WHOOP app marketplace integration. Requires API partnership + traction</td></tr>
+          <tr><td>DiGA Application (DE)</td><td class="cell-center"><span class="channel-priority priority-p2">P2</span></td><td style="text-align:right;color:var(--gold)">$0</td><td style="font-size:12px;color:var(--text-sec)">€234M cumulative spend, 81% activation. ~12 мес approval process</td></tr>
+          <tr><td>Paid Ads (Google/Meta)</td><td class="cell-center"><span class="channel-priority priority-p3">P3</span></td><td style="text-align:right;color:var(--text-muted)">$50-200</td><td style="font-size:12px;color:var(--text-sec)">Defer until PMF confirmed. Health app CPAs are expensive.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="insight reveal" style="margin-top:24px">
+      <strong>YC axiom:</strong> "Do things that don't scale" first.
+      Начать с ручного outreach в Reddit + WHOOP communities. Первые 100 пользователей = лично.
+      PLG-метрика: <em>activation rate</em> (% users who complete 1st session within 24h) → target 60%+.
+    </div>
+  </section>
+
+  <!-- ═══════ 19 MOATS & WHY NOW ═══════ -->
+  <section id="gtm-moats" class="section">
+    <div class="section-num reveal">19 · Moats & Why Now</div>
+    <h2 class="section-title reveal">Защита и тайминг</h2>
+    <p class="section-desc reveal">Почему именно сейчас, и что делает нас hard to replicate.</p>
+
+    <!-- Why Now -->
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 16px" class="reveal">Why Now? — 6 tailwinds</h3>
+    <div class="card-grid-3 reveal">
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">01</div>
+        <div class="card-title">DTx получил CPT codes</div>
+        <div class="card-desc">CMS одобрил RTM-коды (98975-98981) для remote therapeutic monitoring. $121-162/мес на пациента. Первый раз digital tools = billable.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">02</div>
+        <div class="card-title">WHOOP 5.0 + Free API</div>
+        <div class="card-desc">ECG, blood pressure (beta), 14 дней батареи. Открытый API = любой dev может интегрироваться. Wearable-first apps — новый тренд.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">03</div>
+        <div class="card-title">DiGA доказал модель</div>
+        <div class="card-desc">Германия: 59 DiGA apps, €234M cumulative spend, 81% activation rate. Prescription digital therapeutics = real revenue. EU MDR pathway.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">04</div>
+        <div class="card-title">Medisafe стал платным</div>
+        <div class="card-desc">Лидер pill tracking (25M users) перешёл на подписку (Jan 2026). Millions ищут альтернативу. Наш supplement tracking — бесплатный + лучше.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">05</div>
+        <div class="card-title">AI + Computer Vision</div>
+        <div class="card-desc">MediaPipe / TFLite → ROM measurement из camera. Раньше требовался hardware ($500+ гониометр). Теперь — бесплатно в PWA. ICC 0.91 accuracy.</div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--gold)">
+        <div style="font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);margin-bottom:8px">06</div>
+        <div class="card-title">Post-COVID rehab demand</div>
+        <div class="card-desc">Хирургия бэклог + remote care preference. 14.4M ортопедических операций/год (US+EU+RU). Пациенты хотят digital self-management.</div>
+      </div>
+    </div>
+
+    <!-- Moats -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">Defensive Moats — 5 слоёв защиты</h3>
+    <div style="display:flex;flex-direction:column;gap:12px" class="reveal">
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-d);font-weight:700;color:var(--primary-l)">1</div>
+        <div><div style="font-weight:600;font-size:14px">Data Network Effects</div><div style="font-size:12px;color:var(--text-sec)">Каждый пользователь генерирует recovery data → улучшает ML-модели для всех. HRV correlations, supplement effectiveness — ценность растёт с каждым пациентом.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-d);font-weight:700;color:var(--blue)">2</div>
+        <div><div style="font-weight:600;font-size:14px">Switching Cost (Data Lock-in)</div><div style="font-size:12px;color:var(--text-sec)">6+ месяцев recovery data, ROM trajectory, supplement history — пользователи не мигрируют. Средний lifespan health app user: 24 мес.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-d);font-weight:700;color:var(--purple)">3</div>
+        <div><div style="font-weight:600;font-size:14px">Regulatory Moat (future)</div><div style="font-size:12px;color:var(--text-sec)">FDA SaMD Class II / DiGA certification = 12-18 мес barrier to entry. Первый сертифицированный patient-first rehab tracker = defensible position.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--gold-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-d);font-weight:700;color:var(--gold)">4</div>
+        <div><div style="font-weight:600;font-size:14px">Supplement Niche Expertise</div><div style="font-size:12px;color:var(--text-sec)">32 нутрицевтика с timing, interactions, biomarker-linked dosing — ни у кого нет. Medisafe = generic pills. MyTherapy = generic. Мы = specialized.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--radius);background:var(--bg-surface);border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--cyan-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font-d);font-weight:700;color:var(--cyan)">5</div>
+        <div><div style="font-weight:600;font-size:14px">Patient-First Brand</div><div style="font-size:12px;color:var(--text-sec)">Enterprise competitors (Hinge, Sword) = employer-first. Мы = patient-first. NPS-driven viral loops. "Built by a patient, for patients."</div></div>
+      </div>
+    </div>
+
+    <!-- 10x Better -->
+    <h3 style="font-size:15px;font-weight:600;margin:40px 0 16px" class="reveal">10x Better Test (Peter Thiel framework)</h3>
+    <div class="card-grid-2 reveal">
+      <div class="card" style="border-left:3px solid var(--primary)">
+        <div class="card-title" style="color:var(--primary-l)">vs. Hinge Health / Sword</div>
+        <div class="card-desc" style="font-size:13px;line-height:1.8">
+          <strong>10x cheaper:</strong> $7/мес vs $799/year (Sword) = 9.5x<br>
+          <strong>10x more accessible:</strong> No employer needed, no waitlist<br>
+          <strong>10x more holistic:</strong> Supplements + sleep + pain + wearables = full stack<br>
+          <strong>Patient-owned data</strong> vs provider-controlled
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--cyan)">
+        <div class="card-title" style="color:var(--cyan)">vs. WHOOP / Oura</div>
+        <div class="card-desc" style="font-size:13px;line-height:1.8">
+          <strong>10x more clinical:</strong> Rehab protocols, exercise guidance, ROM tracking<br>
+          <strong>10x more actionable:</strong> Not just data → actual recovery programs<br>
+          <strong>Recovery Score 2.0:</strong> Wearable biometrics + clinical metrics = composite score<br>
+          <strong>Supplement integration</strong> = missing piece for recovery
+        </div>
+      </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div style="margin-top:80px;padding:48px;border-radius:var(--radius-xl);background:linear-gradient(135deg,rgba(91,138,114,0.15) 0%,rgba(77,136,204,0.1) 50%,rgba(212,166,71,0.08) 100%);border:1px solid rgba(91,138,114,0.2);text-align:center" class="reveal">
+      <div style="font-family:var(--font-d);font-size:clamp(24px,4vw,36px);font-weight:400;line-height:1.3;margin-bottom:16px">
+        The <strong style="color:var(--primary-l)">patient-first recovery OS</strong><br>with <strong style="color:var(--gold)">wearable intelligence</strong>
+      </div>
+      <p style="color:var(--text-sec);font-size:15px;max-width:500px;margin:0 auto 24px">
+        $92B TAM · 8/10 features built · 0 funded competitors in our exact niche · 6 tailwinds converging now
+      </p>
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+        <span class="card-tag tag-green" style="font-size:12px;padding:6px 16px">PLG Ready</span>
+        <span class="card-tag tag-blue" style="font-size:12px;padding:6px 16px">Wearable API ✓</span>
+        <span class="card-tag tag-gold" style="font-size:12px;padding:6px 16px">RTM Opportunity</span>
+        <span class="card-tag tag-purple" style="font-size:12px;padding:6px 16px">DiGA Pathway</span>
+      </div>
+    </div>
+
+    <!-- GTM Footer -->
+    <div style="margin-top:48px;padding-top:32px;border-top:1px solid var(--border);text-align:center" class="reveal">
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--gold);margin-bottom:8px">Elbow Recovery</div>
+      <div style="font-size:12px;color:var(--text-muted)">Go-to-Market Analysis · February 2026 · YC Framework</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Deep competitive research: Hinge Health, Sword Health, WHOOP, Oura, Omada, DiGA</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// Scroll progress bar
+const progressBar = document.getElementById('progress');
+function updateProgress() {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  progressBar.style.width = h > 0 ? `${(window.scrollY / h) * 100}%` : '0%';
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+
+// Intersection Observer — scroll reveals
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('revealed');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// Counter animation
+function animateCounter(el, target, duration = 1800) {
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = prefix + Math.floor(eased * target) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !entry.target._counted) {
+      entry.target._counted = true;
+      const target = parseInt(entry.target.dataset.counter);
+      if (!isNaN(target)) animateCounter(entry.target, target);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('[data-counter]').forEach(el => counterObserver.observe(el));
+
+// Market bar animation
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const w = entry.target.dataset.width;
+      if (w) entry.target.style.width = w + '%';
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('[data-width]').forEach(el => barObserver.observe(el));
+
+// Active nav tracking
+const sections = document.querySelectorAll('.section[id]');
+const navLinks = document.querySelectorAll('.nav-link[data-target]');
+
+const navObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.dataset.target === entry.target.id);
+      });
+    }
+  });
+}, { threshold: 0.2, rootMargin: '-80px 0px -60% 0px' });
+
+sections.forEach(sec => navObserver.observe(sec));
+
+// Nav click handling
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    const target = document.getElementById(link.dataset.target);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  });
+});
+
+// TAM ring animation
+const tamObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !entry.target._animated) {
+      entry.target._animated = true;
+      const circles = entry.target.querySelectorAll('.tam-circle');
+      circles.forEach((circle, i) => {
+        const circumference = parseFloat(circle.getAttribute('stroke-dasharray'));
+        const fillPercent = [0.85, 0.65, 0.45][i] || 0.5;
+        setTimeout(() => {
+          circle.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          circle.style.strokeDashoffset = circumference * (1 - fillPercent);
+        }, i * 200);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.tam-rings').forEach(el => tamObserver.observe(el));
+
+// Funnel bar animation (reuse barObserver)
+document.querySelectorAll('.funnel-fill[data-width]').forEach(el => barObserver.observe(el));
+
+// Close sidebar on outside click (mobile)
+document.addEventListener('click', (e) => {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('nav-toggle');
+  if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+</script>
+
+</body>
+</html>
