@@ -309,13 +309,13 @@ export async function syncAll(): Promise<SyncResult> {
       .from('users')
       .select('id')
       .eq('auth_id', user.id)
-      .single()
+      .single<{ id: string }>()
 
     if (!userData) {
       return { pushed: 0, pulled: 0, errors: ['User profile not found'] }
     }
 
-    const userId = userData.id as string
+    const userId = userData.id
 
     // Push first, then pull
     const pushResult = await pushToSupabase(supabase, userId)
