@@ -71,6 +71,29 @@ export default function SupplementsPage() {
     [calendarSelectedDate]
   ) ?? []
 
+  async function toggleSupplementForDate(supplementId: string, slot: string) {
+    if (!calendarSelectedDate) return
+    const existing = await db.supplementLogs
+      .where('[date+slot]')
+      .equals([calendarSelectedDate, slot])
+      .filter((l) => l.supplementId === supplementId)
+      .first()
+    if (existing) {
+      await db.supplementLogs.update(existing.id!, {
+        taken: !existing.taken,
+        takenAt: !existing.taken ? new Date().toISOString() : undefined,
+      })
+    } else {
+      await db.supplementLogs.add({
+        supplementId,
+        date: calendarSelectedDate,
+        slot: slot as import('@/data/supplements').SupplementSlot,
+        taken: true,
+        takenAt: new Date().toISOString(),
+      })
+    }
+  }
+
   return (
     <div style={{ paddingTop: '24px', paddingBottom: '80px' }}>
       {/* Back link */}
@@ -160,42 +183,68 @@ export default function SupplementsPage() {
 
       {calendarSelectedDate && (
         <div style={{ marginTop: 16 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 8 }}>
-            {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
-            {' — '}{selectedDateLogs.filter(l => l.taken).length}/{TOTAL_DAILY_SUPPLEMENTS} принято
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', margin: 0 }}>
+              {new Date(calendarSelectedDate + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+              {' — '}{selectedDateLogs.filter(l => l.taken).length}/{TOTAL_DAILY_SUPPLEMENTS} принято
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: 0, opacity: 0.7 }}>
+              нажми для изменения
+            </p>
+          </div>
           {allSupplementDefs.map(supplement => {
             const log = selectedDateLogs.find(l => l.supplementId === supplement.id)
-            const taken = log?.taken ?? null // null = не залогировано
+            const taken = log?.taken ?? null
             return (
-              <div key={supplement.id} style={{
-                padding: '8px 14px',
-                background: 'var(--color-surface)',
-                borderRadius: 10,
-                border: `1px solid ${taken === true ? 'color-mix(in srgb, var(--color-primary) 30%, transparent)' : 'var(--color-border)'}`,
-                marginBottom: 6,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                opacity: taken === null ? 0.55 : 1,
-              }}>
-                <span style={{ fontSize: 16, marginTop: 1, flexShrink: 0 }}>
-                  {taken === true ? '✓' : taken === false ? '○' : '−'}
+              <button
+                key={supplement.id}
+                type="button"
+                onClick={() => toggleSupplementForDate(supplement.id, supplement.slot)}
+                style={{
+                  width: '100%',
+                  padding: '8px 14px',
+                  background: taken === true
+                    ? 'color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))'
+                    : 'var(--color-surface)',
+                  borderRadius: 10,
+                  border: `1px solid ${taken === true
+                    ? 'color-mix(in srgb, var(--color-primary) 35%, transparent)'
+                    : 'var(--color-border)'}`,
+                  marginBottom: 6,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  opacity: taken === null ? 0.6 : 1,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'opacity 0.15s, border-color 0.15s',
+                }}
+              >
+                <span style={{
+                  fontSize: 16,
+                  marginTop: 1,
+                  flexShrink: 0,
+                  color: taken === true ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                }}>
+                  {taken === true ? '✓' : '○'}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, color: 'var(--color-text)', fontWeight: 500 }}>{supplement.name}</p>
+                  <p style={{
+                    fontSize: 12,
+                    color: taken === true ? 'var(--color-primary)' : 'var(--color-text)',
+                    fontWeight: 500,
+                    textDecoration: taken === false ? 'line-through' : 'none',
+                    opacity: taken === false ? 0.6 : 1,
+                  }}>
+                    {supplement.name}
+                  </p>
                   <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
                     {slotLabels[supplement.slot]}{supplement.dose ? ` · ${supplement.dose}` : ''}
                     {log?.takenAt ? ' · ' + new Date(log.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
                     {taken === null ? ' · не отмечено' : ''}
                   </p>
-                  {supplement.form && (
-                    <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1, fontStyle: 'italic' }}>
-                      {supplement.form}
-                    </p>
-                  )}
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>

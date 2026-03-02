@@ -3,7 +3,7 @@
 // Version is stamped at build time by scripts/stamp-sw.mjs
 // ──────────────────────────────────────────────
 
-const APP_VERSION = '20260226014508'
+const APP_VERSION = '20260227000000'
 const CACHE_NAME = `elbow-recovery-${APP_VERSION}`
 
 const PRECACHE_ASSETS = [
@@ -11,12 +11,15 @@ const PRECACHE_ASSETS = [
   '/offline',
 ]
 
-// Install — precache core assets, skip waiting
+// Install — precache core assets only.
+// skipWaiting is NOT called automatically here.
+// On first install the browser activates the SW on its own (no existing SW to replace).
+// On updates the new SW waits in "installed" state until the user taps the update prompt,
+// which posts SKIP_WAITING (see message handler below).
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   )
-  self.skipWaiting()
 })
 
 // Activate — purge ALL old caches, claim clients
