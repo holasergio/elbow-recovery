@@ -46,26 +46,37 @@ export function SupplementChecklist() {
     bedtime: true,
   })
 
-  // Авто-коллапс: скрываем слот когда все позиции выполнены
+  // Авто-коллапс/раскрытие: скрываем слот когда все выполнено, раскрываем если есть непринятые
   useEffect(() => {
     if (!takenIds || !allSupplements) return
     setOpenSlots(prev => {
       const next = { ...prev }
+      let changed = false
       slotOrder.forEach(slot => {
         if (slot === ALWAYS_OPEN) return
         const items = allSupplements.filter(s => s.slot === slot)
         const taken = items.filter(s => takenIds.has(s.id)).length
         if (items.length > 0 && taken === items.length && prev[slot]) {
           next[slot] = false
+          changed = true
+        }
+        // Раскрыть слот если есть непринятые добавки и слот закрыт
+        if (items.length > 0 && taken < items.length && !prev[slot]) {
+          next[slot] = true
+          changed = true
         }
       })
-      return next
+      return changed ? next : prev
     })
   }, [takenIds, allSupplements])
 
   function toggleSlot(slot: SupplementSlot) {
     if (slot === ALWAYS_OPEN) return
     setOpenSlots(prev => ({ ...prev, [slot]: !prev[slot] }))
+  }
+
+  function handleSupplementSaved(slot: SupplementSlot) {
+    setOpenSlots(prev => ({ ...prev, [slot]: true }))
   }
 
   function handleEditSupplement(supplementId: string) {
@@ -303,13 +314,17 @@ export function SupplementChecklist() {
       </button>
 
       {showAddModal && (
-        <AddSupplementModal onClose={() => setShowAddModal(false)} />
+        <AddSupplementModal
+          onClose={() => setShowAddModal(false)}
+          onSaved={handleSupplementSaved}
+        />
       )}
 
       {editingSupplement && (
         <AddSupplementModal
           editData={editingSupplement}
           onClose={() => setEditingSupplement(null)}
+          onSaved={handleSupplementSaved}
         />
       )}
     </div>

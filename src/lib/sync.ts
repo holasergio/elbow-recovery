@@ -271,8 +271,14 @@ export async function pullFromSupabase(supabase: SupabaseClient): Promise<SyncRe
         if (existingUUIDs.has(uuid)) continue // Already exists locally
 
         const dexieRecord = mapSupabaseToDexie(remoteRecord, config)
-        await table.add(dexieRecord)
-        pulledCount++
+        try {
+          await table.add(dexieRecord)
+          pulledCount++
+        } catch (err) {
+          // ConstraintError on unique index (e.g. &date) — record already exists locally
+          if (err instanceof Error && err.name === 'ConstraintError') continue
+          throw err
+        }
       }
 
       result.pulled += pulledCount

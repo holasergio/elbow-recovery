@@ -33,9 +33,10 @@ const CATEGORY_OPTIONS = [
 interface AddSupplementModalProps {
   onClose: () => void
   editData?: CustomSupplement | null
+  onSaved?: (slot: SupplementSlot) => void
 }
 
-export function AddSupplementModal({ onClose, editData }: AddSupplementModalProps) {
+export function AddSupplementModal({ onClose, editData, onSaved }: AddSupplementModalProps) {
   const { addCustomSupplement, updateCustomSupplement } = useCustomSupplements()
   const [saving, setSaving] = useState(false)
 
@@ -78,6 +79,7 @@ export function AddSupplementModal({ onClose, editData }: AddSupplementModalProp
           reason: reason.trim(),
         })
       }
+      onSaved?.(slot)
       onClose()
     } finally {
       setSaving(false)
@@ -313,6 +315,7 @@ const inputStyle: React.CSSProperties = {
 const selectStyle: React.CSSProperties = {
   width: '100%',
   padding: '10px 12px',
+  paddingRight: '36px',
   backgroundColor: 'var(--color-surface-alt)',
   border: '1px solid var(--color-border)',
   borderRadius: 'var(--radius-md)',
@@ -320,5 +323,11 @@ const selectStyle: React.CSSProperties = {
   color: 'var(--color-text)',
   outline: 'none',
   appearance: 'none',
+  WebkitAppearance: 'none',
   cursor: 'pointer',
+  boxSizing: 'border-box',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 12 12'%3E%3Cpath stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 12px center',
+  backgroundSize: '12px',
 }
